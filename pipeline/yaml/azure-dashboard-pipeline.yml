@@ -1,0 +1,32 @@
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yy)$(DayOfYear).$(BuildCounter)
+
+pool: "Mare Nectaris"
+
+trigger:
+  branches:
+    include:
+      - main
+      - "feat*/*/main" # allow feature main branches
+      - "Feat*/*/main"
+      - "bug*/*/main" # allow bugfix main branches
+      - "Bug*/*/main"
+      - "fix*/*/main" # allow hotfix main branches
+      - "Fix*/*/main"
+
+variables:
+  - name: BuildCounter
+    value: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
+
+pr:
+  autoCancel: "true" # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
+  branches:
+    include:
+      - "*"
+  paths:
+    include:
+      - src/terraform/*
+      - cicd/azure-dashboard-pipeline.yml
+  drafts: "false"
+
+steps:
+  - script: echo "Hello World"
