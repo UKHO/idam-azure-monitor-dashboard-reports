@@ -1,54 +1,38 @@
 locals {
-  pipeline_authorizations = {
-    github = {
-      type        = "endpoint"
-      resource_id = data.azuredevops_serviceendpoint_github.this.id
+  pipeline_authorizations = merge(
+    {
+      github_endpoint = {
+        type        = "endpoint"
+        resource_id = data.azuredevops_serviceendpoint_github.this.id
+        pipeline_id = azuredevops_build_definition.this.id
+      }
+
+      azurerm_endpoint = {
+        type        = "endpoint"
+        resource_id = data.azuredevops_serviceendpoint_azurerm.this.id
+        pipeline_id = azuredevops_build_definition.this.id
+      }
+
+      agent_queue = {
+        type        = "queue"
+        resource_id = data.azuredevops_agent_queue.this.id
+        pipeline_id = azuredevops_build_definition.this.id
+      }
+    },
+    { for env_key, env in azuredevops_environment.this : "env_${env_key}" => {
+      type        = "environment"
+      resource_id = env.id
       pipeline_id = azuredevops_build_definition.this.id
+      }
     }
-
-    azure_subscription = {
-      type        = "endpoint"
-      resource_id = data.azuredevops_serviceendpoint_azurerm.this.id
-      pipeline_id = azuredevops_build_definition.this.id
-    }
-
-    agent_queue = {
-      type        = "queue"
-      resource_id = data.azuredevops_agent_queue.this.id
-      pipeline_id = azuredevops_build_definition.this.id
-    }
-  }
-}
-
-data "azuredevops_project" "this" {
-  name = var.azure_devops_project_name
-}
-
-data "azuredevops_serviceendpoint_github" "this" { # Will need manually created part of the DevOps Project
-  project_id            = data.azuredevops_project.this.id
-  service_endpoint_name = var.azure_devops_service_endpoint_github_name
-}
-
-data "azuredevops_serviceendpoint_azurerm" "this" { # Will need manually created part of the DevOps Project
-  project_id            = data.azuredevops_project.this.id
-  service_endpoint_name = var.azure_devops_service_endpoint_azurerm_name
-}
-
-data "azuredevops_agent_queue" "this" { # Will need manually created part of the DevOps Project
-  name       = var.azure_devops_agent_queue_name
-  project_id = data.azuredevops_project.this.id
+  )
 }
 
 resource "azuredevops_build_definition" "this" {
-  project_id = data.azuredevops_project.this.id
-  name       = "${local.repository_name}.${local.service_name}"
-  path       = "\\${local.service_name}"
-
+  project_id      = data.azuredevops_project.this.id
+  name            = local.service_name
   agent_pool_name = data.azuredevops_agent_queue.this.name
-
-  ci_trigger {
-    use_yaml = true
-  }
+  path            = "\\${local.repository_name}\\${local.service_name}"
 
   repository {
     repo_type             = "GitHub"
@@ -56,6 +40,18 @@ resource "azuredevops_build_definition" "this" {
     branch_name           = "refs/heads/main"
     yml_path              = "pipeline/yaml/azure-dashboard-pipeline.yml"
     service_connection_id = data.azuredevops_serviceendpoint_github.this.id
+  }
+
+  ci_trigger {
+    use_yaml = true
+  }
+
+  pull_request_trigger {
+    use_yaml = true
+    forks {
+      enabled       = false
+      share_secrets = false
+    }
   }
 }
 
