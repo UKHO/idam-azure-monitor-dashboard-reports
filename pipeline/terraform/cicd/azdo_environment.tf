@@ -13,6 +13,7 @@ locals {
       approvers = [
         data.azuredevops_group.build_admins.id,
       ]
+      timeout = 30
     },
     live = {
       name = "${local.service_name}-live"
@@ -20,6 +21,7 @@ locals {
         data.azuredevops_group.build_admins.id,
         data.azuredevops_group.release_admins.id
       ]
+      timeout = 120
     }
   }
 }
@@ -43,8 +45,8 @@ resource "azuredevops_check_approval" "azdo_env" {
 
   instructions               = "Please review and approve the environment for ${local.service_name}."
   minimum_required_approvers = 1
-  requester_can_approve      = false
-  timeout                    = local.check_approval_timeout
+  requester_can_approve      = true
+  timeout                    = each.value.timeout
 }
 
 locals {
