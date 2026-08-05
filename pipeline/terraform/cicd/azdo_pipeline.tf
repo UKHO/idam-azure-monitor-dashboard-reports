@@ -1,4 +1,5 @@
 locals {
+  pipeline_name = local.service_name
   pipeline_authorizations = merge(
     {
       github_endpoint = {
@@ -36,7 +37,7 @@ locals {
 
 resource "azuredevops_build_definition" "this" {
   project_id      = data.azuredevops_project.this.id
-  name            = local.service_name
+  name            = local.pipeline_name
   agent_pool_name = data.azuredevops_agent_queue.this.name
   path            = "\\${local.repository_name}\\${local.service_name}"
 
