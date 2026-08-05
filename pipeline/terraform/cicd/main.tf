@@ -10,14 +10,6 @@ terraform {
       source  = "integrations/github"
       version = "~> 6"
     }
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4"
-    }
-    azuread = {
-      source  = "hashicorp/azuread"
-      version = "~> 2"
-    }
   }
 
   backend "local" {
@@ -30,16 +22,4 @@ provider "azuredevops" {
 
 provider "github" {
   owner = var.github_owner
-}
-
-provider "azurerm" {
-  features {}
-}
-
-provider "azuread" {}
-
-data "azurerm_client_config" "current" {}
-
-data "azurerm_subscription" "current" {
-  subscription_id = data.azurerm_client_config.current.subscription_id
 }

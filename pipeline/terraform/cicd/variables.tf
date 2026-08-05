@@ -25,6 +25,15 @@ variable "azure_devops_project_name" {
   }
 }
 
+variable "azure_devops_service_endpoint_azurerm_name" {
+  description = "The name of the Azure DevOps service endpoint for Azure Resource Manager"
+  type        = string
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9-_ ]+$", var.azure_devops_service_endpoint_azurerm_name))
+    error_message = "The Azure DevOps service endpoint name must only contain alphanumeric characters, hyphens, underscores, and spaces."
+  }
+}
+
 variable "azure_devops_service_endpoint_github_name" {
   description = "The name of the Azure DevOps service endpoint for GitHub"
   type        = string

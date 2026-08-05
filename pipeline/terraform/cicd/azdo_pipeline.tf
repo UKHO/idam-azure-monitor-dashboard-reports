@@ -8,7 +8,7 @@ locals {
 
     azure_subscription = {
       type        = "endpoint"
-      resource_id = azuredevops_serviceendpoint_azurerm.this.id
+      resource_id = data.azuredevops_serviceendpoint_azurerm.this.id
       pipeline_id = azuredevops_build_definition.this.id
     }
 
@@ -27,6 +27,11 @@ data "azuredevops_project" "this" {
 data "azuredevops_serviceendpoint_github" "this" { # Will need manually created part of the DevOps Project
   project_id            = data.azuredevops_project.this.id
   service_endpoint_name = var.azure_devops_service_endpoint_github_name
+}
+
+data "azuredevops_serviceendpoint_azurerm" "this" { # Will need manually created part of the DevOps Project
+  project_id            = data.azuredevops_project.this.id
+  service_endpoint_name = var.azure_devops_service_endpoint_azurerm_name
 }
 
 data "azuredevops_agent_queue" "this" { # Will need manually created part of the DevOps Project
@@ -49,7 +54,7 @@ resource "azuredevops_build_definition" "this" {
     repo_type             = "GitHub"
     repo_id               = data.github_repository.this.id
     branch_name           = "refs/heads/main"
-    yml_path              = "cicd/azure-dashboard-pipeline.yml"
+    yml_path              = "pipeline/yaml/azure-dashboard-pipeline.yml"
     service_connection_id = data.azuredevops_serviceendpoint_github.this.id
   }
 }
