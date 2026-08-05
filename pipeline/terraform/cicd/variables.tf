@@ -60,3 +60,12 @@ variable "law_resource_id" {
     error_message = "The Azure Law resource ID must be in the format '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Law/laws/{lawName}'"
   }
 }
+
+variable "azure_subscription_id" {
+  description = "The Azure subscription ID"
+  type        = string
+  validation {
+    condition     = can(regex("^[a-f0-9-]+$", var.azure_subscription_id))
+    error_message = "The Azure subscription ID must be a valid GUID."
+  }
+}

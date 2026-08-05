@@ -9,6 +9,11 @@ resource "azuredevops_variable_group" "this" {
     secret_value = var.law_resource_id
     is_secret    = true
   }
+
+  variable {
+    name  = "azure_subscription_id"
+    value = var.azure_subscription_id
+  }
 }
 
 resource "azuredevops_check_approval" "azdo_variable_group" {
