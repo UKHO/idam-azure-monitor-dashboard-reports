@@ -7,6 +7,12 @@ locals {
         pipeline_id = azuredevops_build_definition.this.id
       }
 
+      variable_group = {
+        type        = "variablegroup"
+        resource_id = azuredevops_variable_group.this.id
+        pipeline_id = azuredevops_build_definition.this.id
+      }
+
       azurerm_endpoint = {
         type        = "endpoint"
         resource_id = data.azuredevops_serviceendpoint_azurerm.this.id
