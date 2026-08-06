@@ -1,6 +1,16 @@
 name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yy)$(DayOfYear).$(BuildCounter)
 
-pool: "Mare Nectaris"
+pool:
+  name: Azure-UKHO-Engineering
+  demands: ImageOverride -equals ubuntu-latest
+
+resources:
+  repositories:
+    - repository: AzDOPipelineTemplates
+      type: github
+      endpoint: UKHO
+      name: UKHO/devops-azdo-yaml-pipeline-templates
+      ref: refs/tags/0.2.0
 
 trigger:
   branches:
@@ -16,6 +26,19 @@ trigger:
 variables:
   - name: BuildCounter
     value: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
+  - name: RelativePathToTerraformFiles
+    value: src/terraform/azure-dashboard
+  - name: ServiceConnection
+    value: Identity Access Management Live
+  - name: TFStateContainerName
+    value: idam-azure-dashboard-pims-reporting-tfstate
+  - name: TFStateStorageAccountName
+    value: idamlivesa
+  - name: TFStateResourceGroupName
+    value: m-spokeconnect-uksouth-rg
+  - name: TFStateBlobNameShard
+    value: azure-dashboard-{0}.tfstate
+  - group: pims-reporting shared
 
 pr:
   autoCancel: "true" # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
@@ -25,8 +48,71 @@ pr:
   paths:
     include:
       - src/terraform/*
-      - cicd/azure-dashboard-pipeline.yml
+      - pipeline/yaml/azure-dashboard-pipeline.yml
   drafts: "false"
 
-steps:
-  - script: echo "Hello World"
+extends:
+  template: pipelines/terraform_pipeline.yml@AzDOPipelineTemplates # https://github.com/UKHO/devops-azdo-yaml-pipeline-templates/blob/main/docs/user-docs/infrastructure_pipeline.md
+  parameters:
+    RelativePathToTerraformFiles: ${{ variables.RelativePathToTerraformFiles }}
+    TerraformVersion: 1.15.1
+    TerraformBuildInjectionSteps:
+    #     - task: UkhoSnykScanTask@0
+    #       displayName: 'Snyk IaC scan'
+    #       inputs:
+    #         failOnIssues: true
+    #         failOnThreshold: high
+    #         additionalArguments: --fail-on=upgradable
+    #         organization: $(SNYK-ORG-ID) # Need to get this somewhere...
+    #         serviceConnectionEndpoint: Snyk
+    #         severityThreshold: low
+    #         testType: iac
+    #         monitorwhen: never
+    #         testDirectory: "$(Pipeline.Workspace)/$(Build.Repository.Name)/${{ variables.RelativePathToTerraformFiles }}"
+    #
+    #     - task: PublishPipelineArtifact@1
+    #       displayName: 'Publish Snyk scan results'
+    #       condition: succeededOrFailed()
+    #       inputs:
+    #         targetPath: '$(Agent.TempDirectory)'
+    #         artifact: Snyk_Scan
+    #         publishLocation: 'pipeline'
+    EnvironmentConfigs:
+      - Name: dev
+        Stage:
+          DependsOn:
+            - build_terraform
+          Condition: succeeded('build_terraform')
+        TerraformDeploymentConfig:
+          AzureServiceConnection: ${{ variables.ServiceConnection }}
+          AzDOEnvironmentName: "${{ variables.ServiceName }}-dev"
+          BackendConfig:
+            resource_group_name: ${{ variables.TFStateResourceGroupName }}
+            storage_account_name: ${{ variables.TFStateStorageAccountName }}
+            container_name: ${{ variables.TFStateContainerName }}
+            key: ${{ format(variables.ServiceName, 'dev') }}
+          RunMode: 'PlanVerifyApply'
+          VerificationMode: 'VerifyOnDestroy'
+          EnvironmentVariableMappings:
+            TF_VAR_environment: dev
+            TF_VAR_law_resource_id: $(law_resource_id)
+
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+          - Name: live
+            Stage:
+              DependsOn:
+                - Deploy_dev_Terraform
+              Condition: succeeded('Deploy_dev_Terraform')
+            TerraformDeploymentConfig:
+              AzureServiceConnection: ${{ variables.ServiceConnection }}
+              AzDOEnvironmentName: "${{ variables.ServiceName }}-live"
+              BackendConfig:
+                resource_group_name: ${{ variables.TFStateResourceGroupName }}
+                storage_account_name: ${{ variables.TFStateStorageAccountName }}
+                container_name: ${{ variables.TFStateContainerName }}
+                key: ${{ format(variables.ServiceName, 'live') }}
+              RunMode: 'PlanVerifyApply'
+              VerificationMode: 'VerifyOnAny'
+              EnvironmentVariableMappings:
+                TF_VAR_environment: live
+                TF_VAR_law_resource_id: $(law_resource_id)
