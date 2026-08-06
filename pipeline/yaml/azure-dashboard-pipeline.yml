@@ -26,6 +26,8 @@ trigger:
 variables:
   - name: BuildCounter
     value: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
+  - name: ServiceName
+    value: pims-reporting
   - name: RelativePathToTerraformFiles
     value: src/terraform/azure-dashboard
   - name: ServiceConnection
@@ -90,7 +92,7 @@ extends:
             resource_group_name: ${{ variables.TFStateResourceGroupName }}
             storage_account_name: ${{ variables.TFStateStorageAccountName }}
             container_name: ${{ variables.TFStateContainerName }}
-            key: ${{ format(variables.ServiceName, 'dev') }}
+            key: ${{ format(variables.TFStateBlobNameShard, 'dev') }}
           RunMode: 'PlanVerifyApply'
           VerificationMode: 'VerifyOnDestroy'
           EnvironmentVariableMappings:
@@ -110,7 +112,7 @@ extends:
                 resource_group_name: ${{ variables.TFStateResourceGroupName }}
                 storage_account_name: ${{ variables.TFStateStorageAccountName }}
                 container_name: ${{ variables.TFStateContainerName }}
-                key: ${{ format(variables.ServiceName, 'live') }}
+                key: ${{ format(variables.TFStateBlobNameShard, 'live') }}
               RunMode: 'PlanVerifyApply'
               VerificationMode: 'VerifyOnAny'
               EnvironmentVariableMappings:

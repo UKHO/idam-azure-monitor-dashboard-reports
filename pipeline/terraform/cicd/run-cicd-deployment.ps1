@@ -45,6 +45,16 @@ param(
         throw "SubscriptionId must be a valid GUID"
     })]
     [string]$SubscriptionId,
+    
+    [Parameter(Mandatory = $true)]
+    [ValidateScript({
+        if ( [guid]::TryParse($_, [ref][guid]::Empty))
+        {
+            return $true
+        }
+        throw "TenantId must be a valid GUID"
+    })]
+    [string]$TenantId,
 
     [switch]$SkipValidation
 )
@@ -92,7 +102,7 @@ catch
 if (-not $existingToken)
 {
     Write-Host "No valid token found. Logging in to tenant: $TenantId"
-    az login --tenant "9134ca48-663d-4a05-968a-31a42f0aed3e" --scope "https://storage.azure.com//.default"
+    az login --tenant "$TenantId" --scope "https://storage.azure.com/.default"
     Assert-ExitCode "az login"
 }
 else

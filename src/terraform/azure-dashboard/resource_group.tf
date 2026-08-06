@@ -1,5 +1,5 @@
 resource "azurerm_resource_group" "this" {
-  location = "UK South"
+  location = "uksouth"
   name     = local.resource_group_name
   tags     = local.tags
 }
