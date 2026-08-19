@@ -33,7 +33,7 @@ variables:
   - name: ServiceConnection
     value: Identity Access Management Live
   - name: TFStateContainerName
-    value: idam-azure-dashboard-pims-reporting-tfstate
+    value: tfstate
   - name: TFStateStorageAccountName
     value: idamlivesa
   - name: TFStateResourceGroupName
