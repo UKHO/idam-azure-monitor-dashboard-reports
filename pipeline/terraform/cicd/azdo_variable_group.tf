@@ -29,5 +29,5 @@ resource "azuredevops_check_approval" "azdo_variable_group" {
   instructions               = "Please review and approve the variable group for ${local.service_name}."
   minimum_required_approvers = 1
   requester_can_approve      = true
-  timeout                    = 60
+  timeout                    = 30
 }
