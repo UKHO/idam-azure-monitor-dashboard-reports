@@ -20,5 +20,5 @@ data "azuredevops_group" "project_valid_users" {
 
 data "azuredevops_group" "project_admins" {
   project_id = data.azuredevops_project.this.id
-  name       = "Project Administators"
+  name       = "Project Administrators"
 }
