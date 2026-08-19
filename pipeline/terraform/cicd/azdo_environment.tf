@@ -38,7 +38,7 @@ resource "azuredevops_check_approval" "azdo_env" {
   for_each = local.environment_names
 
   project_id           = data.azuredevops_project.this.id
-  target_resource_id   = azuredevops_environment.this[each.value.name].id
+  target_resource_id   = azuredevops_environment.this[each.key].id
   target_resource_type = "environment"
 
   approvers = each.value.approvers
