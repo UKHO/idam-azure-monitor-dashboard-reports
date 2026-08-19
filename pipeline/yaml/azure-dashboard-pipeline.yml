@@ -58,7 +58,7 @@ extends:
   parameters:
     RelativePathToTerraformFiles: ${{ variables.RelativePathToTerraformFiles }}
     TerraformVersion: 1.15.1
-    TerraformBuildInjectionSteps:
+    #TerraformBuildInjectionSteps:
     #     - task: UkhoSnykScanTask@0
     #       displayName: 'Snyk IaC scan'
     #       inputs:
