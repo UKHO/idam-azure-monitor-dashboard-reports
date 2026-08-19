@@ -11,15 +11,15 @@ locals {
     dev = {
       name = "${local.service_name}-dev"
       approvers = [
-        data.azuredevops_group.build_admins.id,
+        data.azuredevops_group.build_admins.origin_id,
       ]
       timeout = 30
     },
     live = {
       name = "${local.service_name}-live"
       approvers = [
-        data.azuredevops_group.build_admins.id,
-        data.azuredevops_group.release_admins.id
+        data.azuredevops_group.build_admins.origin_id,
+        data.azuredevops_group.release_admins.origin_id
       ]
       timeout = 120
     }
