@@ -40,7 +40,7 @@ variables:
     value: m-spokeconnect-uksouth-rg
   - name: TFStateBlobNameShard
     value: azure-dashboard-{0}.tfstate
-  - group: pims-reporting shared
+  - group: pims-reporting-shared
 
 pr:
   autoCancel: "true" # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
