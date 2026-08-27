@@ -10,7 +10,7 @@ resources:
       type: github
       endpoint: UKHO
       name: UKHO/devops-azdo-yaml-pipeline-templates
-      ref: refs/tags/0.2.0
+      ref: refs/tags/0.3.0
 
 trigger:
   branches:
@@ -33,7 +33,7 @@ variables:
   - name: ServiceConnection
     value: Identity Access Management Live
   - name: TFStateContainerName
-    value: tfstate
+    value: idam-azure-dashboard-pims-reporting-tfstate
   - name: TFStateStorageAccountName
     value: idamlivesa
   - name: TFStateResourceGroupName
@@ -57,27 +57,6 @@ extends:
   parameters:
     RelativePathToTerraformFiles: ${{ variables.RelativePathToTerraformFiles }}
     TerraformVersion: 1.15.1
-    #TerraformBuildInjectionSteps:
-    #     - task: UkhoSnykScanTask@0
-    #       displayName: 'Snyk IaC scan'
-    #       inputs:
-    #         failOnIssues: true
-    #         failOnThreshold: high
-    #         additionalArguments: --fail-on=upgradable
-    #         organization: $(SNYK-ORG-ID) # Need to get this somewhere...
-    #         serviceConnectionEndpoint: Snyk
-    #         severityThreshold: low
-    #         testType: iac
-    #         monitorwhen: never
-    #         testDirectory: "$(Pipeline.Workspace)/$(Build.Repository.Name)/${{ variables.RelativePathToTerraformFiles }}"
-    #
-    #     - task: PublishPipelineArtifact@1
-    #       displayName: 'Publish Snyk scan results'
-    #       condition: succeededOrFailed()
-    #       inputs:
-    #         targetPath: '$(Agent.TempDirectory)'
-    #         artifact: Snyk_Scan
-    #         publishLocation: 'pipeline'
     EnvironmentConfigs:
       - Name: dev
         Stage:
