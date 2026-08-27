@@ -19,9 +19,9 @@ locals {
   }
 }
 
-resource "github_repository_ruleset" "this" {
+resource "github_repository_ruleset" "main" {
   name        = "main"
-  repository  = data.github_repository.this.name
+  repository  = github_repository.this.name
   enforcement = "active"
   target      = "branch"
 
@@ -61,6 +61,33 @@ resource "github_repository_ruleset" "this" {
     copilot_code_review {
       review_on_push             = false
       review_draft_pull_requests = true
+    }
+  }
+}
+
+resource "github_repository_ruleset" "non_main" {
+  name        = "non-main-branches"
+  repository  = github_repository.this.name
+  enforcement = "active"
+  target      = "branch"
+
+  conditions {
+    ref_name {
+      include = ["~ALL"]
+      exclude = ["~DEFAULT_BRANCH"]
+    }
+  }
+
+  rules {
+    pull_request {
+      allowed_merge_methods = ["merge"]
+    }
+
+    branch_name_pattern {
+      operator = "regex"
+      pattern  = "^(feature|fix)/[a-z0-9._-]+$"
+      name     = "lowercase-feature-fix-prefix"
+      negate   = false
     }
   }
 }

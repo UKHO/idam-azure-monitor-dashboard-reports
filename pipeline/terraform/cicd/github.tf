@@ -1,11 +1,6 @@
 locals {
-  repository_name = "idam-azure-dashboard-pims-reporting"
-  repository_id   = "${var.github_owner}/${local.repository_name}"
-  # github_team_name = "team-idam"
-}
-
-data "github_repository" "this" {
-  full_name = local.repository_id
+  repository_name  = "idam-azure-dashboard-pims-reporting"
+  github_team_name = "IDAM"
 }
 
 data "github_app" "azure_pipelines" {
