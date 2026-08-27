@@ -1,3 +1,3 @@
 locals {
-  service_name = "pims-reporting"
+  service_name = "workbook-reporting"
 }
