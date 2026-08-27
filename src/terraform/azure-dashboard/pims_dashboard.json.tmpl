@@ -1,0 +1,669 @@
+{
+  "version": "Notebook/1.0",
+  "name": "Questionable PIMs Assignments",
+  "items": [
+    {
+      "type": 9,
+      "name": "global_parameters",
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "41f2d571-b317-47f4-a084-9af6196d1334",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContextFromParameter": null,
+            "key": "41f2d571-b317-47f4-a084-9af6196d1334",
+            "value": {
+              "durationMs": 1209600000
+            }
+          }
+        ],
+        "title": ""
+      },
+      "styleSettings": {
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 0,
+        "showBorder": false,
+        "borderStyle": "light thick"
+      }
+    },
+    {
+      "type": 1,
+      "name": "pim-users-made-permanent-title",
+      "content": {
+        "json": "",
+        "title": "PIM Users Made Permanent",
+        "headingLevel": 3
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 1,
+        "x": 0,
+        "y": 2
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-users-made-permanent-stat",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| where Result =~ \"success\"\n| count",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "textSettings": {
+          "style": "bignumber"
+        },
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 9,
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-users-made-permanent-grid",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| project TimeGenerated, TargetEntityName, Role, ResultDescription, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "textSettings": {
+          "style": "bignumber"
+        },
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TimeGenerated",
+              "formatter": 0
+            }
+          ],
+          "rowLimit": 250,
+          "filter": false
+        },
+        "headingLevel": 3,
+        "showViewButton": false,
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "CorrelationId",
+            "parameterName": "PIMUsersMadePermanentCorrelationID"
+          }
+        ],
+        "noDataMessage": "No members added to role in PIM occurred in the selected time range."
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 21,
+        "h": 9,
+        "x": 3,
+        "y": 3
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-users-made-permanent-correlationid-search",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "PIM Users Made Permanent Correlation ID Search",
+        "query": "AuditLogs\n| where CorrelationId == '{PIMUsersMadePermanentCorrelationID}'\n| project TimeGenerated, OperationName, Identity, InitiatedBy, TargetResources\n| sort by TimeGenerated asc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TargetResources",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ]
+        },
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 6,
+        "x": 0,
+        "y": 12
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "PIMUsersMadePermanentCorrelationID",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": 1,
+      "name": "pim-assignments-in-pim-title",
+      "content": {
+        "json": "",
+        "title": "PIM Assignments in PIM",
+        "headingLevel": 3
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 1,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-assignments-in-pim-stat",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| where Result =~ \"success\"\n| count",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "textSettings": {
+          "style": "bignumber"
+        },
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 9,
+        "x": 0,
+        "y": 13
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-assignments-in-pim-grid",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| extend Type = iff(OperationName has \"permanent\", \"Permanent\", \"Timebound\")\n| project TimeGenerated, TargetEntityName, Role, Type, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "textSettings": {
+          "style": "bignumber"
+        },
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TimeGenerated",
+              "formatter": 0
+            }
+          ],
+          "rowLimit": 250
+        },
+        "headingLevel": 3,
+        "showViewButton": false,
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "CorrelationId",
+            "parameterName": "PIMAssignmentsInPIMCorrelationID"
+          }
+        ],
+        "noDataMessage": "No eligible members added to role in PIM occurred in the selected time range."
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 21,
+        "h": 9,
+        "x": 3,
+        "y": 13
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-assignments-in-pim-correlationid-search",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "PIM Assignments in PIM Correlation ID Search",
+        "query": "AuditLogs\n| where CorrelationId == '{PIMAssignmentsInPIMCorrelationID}'\n| project TimeGenerated, OperationName, Identity, InitiatedBy, TargetResources\n| sort by TimeGenerated asc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TargetResources",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ]
+        },
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 6,
+        "x": 0,
+        "y": 28
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "PIMAssignmentsInPIMCorrelationID",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": 1,
+      "name": "pim-assignments-outside-pim-title",
+      "content": {
+        "json": "",
+        "title": "Assignments made outside of PIM",
+        "headingLevel": 3
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 1,
+        "x": 0,
+        "y": 22
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-assignments-outside-pim-stat",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| where Result =~ \"success\"\n| count",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "textSettings": {
+          "style": "bignumber"
+        },
+        "showViewButton": false,
+        "statSettings": {
+          "colorSettings": {
+            "mode": "foreground",
+            "type": "thresholds",
+            "thresholdsGrid": [
+              {
+                "operator": ">",
+                "thresholdValue": "0",
+                "representation": "redBright"
+              },
+              {
+                "operator": "Default"
+              }
+            ]
+          },
+          "tagTextPosition": "bottom"
+        }
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 9,
+        "x": 0,
+        "y": 23
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-assignments-outside-pim-grid",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| project TimeGenerated, TargetEntityName, Role, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "textSettings": {
+          "style": "bignumber"
+        },
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TimeGenerated",
+              "formatter": 0
+            }
+          ],
+          "rowLimit": 250
+        },
+        "headingLevel": 3,
+        "showViewButton": false,
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "CorrelationId",
+            "parameterName": "PIMAssignmentsOutsidePIMCorrelationID"
+          }
+        ],
+        "noDataMessage": "No members added to role outside of PIM occurred in the selected time range."
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 21,
+        "h": 9,
+        "x": 3,
+        "y": 23
+      }
+    },
+    {
+      "type": 3,
+      "name": "pim-assignments-outside-pim-correlationid-search",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "PIM Assignments outside PIM Correlation ID Search",
+        "query": "AuditLogs\n| where CorrelationId == '{PIMAssignmentsOutsidePIMCorrelationID}'\n| project TimeGenerated, OperationName, Identity, InitiatedBy, TargetResources\n| sort by TimeGenerated asc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TargetResources",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ]
+        },
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 6,
+        "x": 0,
+        "y": 42
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "PIMAssignmentsOutsidePIMCorrelationID",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": 1,
+      "name": "rbac-assignments-to-users-title",
+      "content": {
+        "json": "",
+        "title": "RBAC Assignments to Users",
+        "headingLevel": 3
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 1,
+        "x": 0,
+        "y": 32
+      }
+    },
+    {
+      "type": 3,
+      "name": "rbac-assignments-to-users-stat",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AzureActivity\r\n| where OperationNameValue =~ \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\r\n| where ActivityStatusValue =~ \"Success\"\r\n| extend PrincipalType = tostring(parse_json(Authorization).evidence.principalType)\r\n| where PrincipalType =~ \"User\"\r\n| count",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "textSettings": {
+          "style": "bignumber"
+        },
+        "showViewButton": false,
+        "statSettings": {
+          "colorSettings": {
+            "mode": "foreground",
+            "type": "thresholds",
+            "thresholdsGrid": [
+              {
+                "operator": "Default"
+              }
+            ]
+          },
+          "tagTextPosition": "bottom"
+        }
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 9,
+        "x": 0,
+        "y": 33
+      }
+    },
+    {
+      "type": 3,
+      "name": "rbac-assignments-to-user-grid",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "AzureActivity\n| where OperationNameValue =~ \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\n| where ActivityStatusValue =~ \"Success\"\n| extend authorizationJson = parse_json(Authorization)\n| extend\n    PrincipalType = tostring(authorizationJson.evidence.principalType),\n    Role = tostring(authorizationJson.evidence.role),\n    RoleAssignmentScope = tostring(authorizationJson.evidence.roleAssignmentScope)\n| where PrincipalType =~ \"User\"\n| project TimeGenerated, Caller, Role, RoleAssignmentScope, CorrelationId\n| sort by TimeGenerated desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Properties",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "CorrelationId",
+              "formatter": 1,
+              "formatOptions": {}
+            }
+          ],
+          "sortBy": [
+            {
+              "itemKey": "ActivityStatusValue",
+              "sortOrder": 2
+            }
+          ]
+        },
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "CorrelationId",
+            "parameterName": "RBACAssignmentToUserCorrelationId"
+          }
+        ],
+        "noDataMessage": "No RBAC roles assigned to users in the selected time range."
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 21,
+        "h": 9,
+        "x": 3,
+        "y": 33
+      }
+    },
+    {
+      "type": 3,
+      "name": "rbac-assignments-to-user-correlationid-search",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "RBAC Assignments to Users Correlation ID Search",
+        "query": "AzureActivity\n| where CorrelationId == '{RBACAssignmentToUserCorrelationId}'\n| sort by TimeGenerated asc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Authorization",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ]
+        },
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 6,
+        "x": 0,
+        "y": 60
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "RBACAssignmentToUserCorrelationId",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        }
+      ]
+    }
+  ],
+  "layout": {
+    "type": "grid"
+  },
+  "styleSettings": {
+    "paddingStyle": "none",
+    "spacingStyle": "none",
+    "background": "lighter"
+  },
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "workbookPin": "",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
+

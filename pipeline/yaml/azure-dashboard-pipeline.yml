@@ -1,0 +1,102 @@
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(Date:yy)$(DayOfYear).$(BuildCounter)
+
+pool:
+  name: Azure-UKHO-Engineering
+  demands: ImageOverride -equals ubuntu-latest
+
+resources:
+  repositories:
+    - repository: AzDOPipelineTemplates
+      type: github
+      endpoint: UKHO
+      name: UKHO/devops-azdo-yaml-pipeline-templates
+      ref: refs/tags/0.3.0
+
+trigger:
+  branches:
+    include:
+      - main
+      - "feat*/*/main" # allow feature main branches
+      - "Feat*/*/main"
+      - "bug*/*/main" # allow bugfix main branches
+      - "Bug*/*/main"
+      - "fix*/*/main" # allow hotfix main branches
+      - "Fix*/*/main"
+
+variables:
+  - name: BuildCounter
+    value: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
+  - name: ServiceName
+    value: pims-reporting
+  - name: RelativePathToTerraformFiles
+    value: src/terraform/azure-dashboard
+  - name: ServiceConnection
+    value: Identity Access Management Live
+  - name: TFStateContainerName
+    value: idam-azure-dashboard-pims-reporting-tfstate
+  - name: TFStateStorageAccountName
+    value: idamlivesa
+  - name: TFStateResourceGroupName
+    value: m-spokeconnect-uksouth-rg
+  - name: TFStateBlobNameShard
+    value: azure-dashboard-{0}.tfstate
+
+pr:
+  autoCancel: "true" # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
+  branches:
+    include:
+      - "*"
+  paths:
+    include:
+      - src/terraform/**
+      - pipeline/yaml/azure-dashboard-pipeline.yml
+  drafts: "false"
+
+extends:
+  template: pipelines/terraform_pipeline.yml@AzDOPipelineTemplates # https://github.com/UKHO/devops-azdo-yaml-pipeline-templates/blob/main/docs/user-docs/infrastructure_pipeline.md
+  parameters:
+    RelativePathToTerraformFiles: ${{ variables.RelativePathToTerraformFiles }}
+    TerraformVersion: 1.15.1
+    EnvironmentConfigs:
+      - Name: dev
+        Stage:
+          DependsOn:
+            - build_terraform
+          Condition: succeeded('build_terraform')
+        TerraformDeploymentConfig:
+          AzureServiceConnection: ${{ variables.ServiceConnection }}
+          AzDOEnvironmentName: "${{ variables.ServiceName }}-dev"
+          BackendConfig:
+            resource_group_name: ${{ variables.TFStateResourceGroupName }}
+            storage_account_name: ${{ variables.TFStateStorageAccountName }}
+            container_name: ${{ variables.TFStateContainerName }}
+            key: ${{ format(variables.TFStateBlobNameShard, 'dev') }}
+          RunMode: 'PlanVerifyApply'
+          VerificationMode: 'VerifyOnDestroy'
+          JobsVariableMappings:
+            - group: pims-reporting-shared
+          EnvironmentVariableMappings:
+            TF_VAR_environment: dev
+            TF_VAR_law_resource_id: $(law_resource_id)
+
+      - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+          - Name: live
+            Stage:
+              DependsOn:
+                - Deploy_dev_Terraform
+              Condition: succeeded('Deploy_dev_Terraform')
+            TerraformDeploymentConfig:
+              AzureServiceConnection: ${{ variables.ServiceConnection }}
+              AzDOEnvironmentName: "${{ variables.ServiceName }}-live"
+              BackendConfig:
+                resource_group_name: ${{ variables.TFStateResourceGroupName }}
+                storage_account_name: ${{ variables.TFStateStorageAccountName }}
+                container_name: ${{ variables.TFStateContainerName }}
+                key: ${{ format(variables.TFStateBlobNameShard, 'live') }}
+              RunMode: 'PlanVerifyApply'
+              VerificationMode: 'VerifyOnAny'
+              JobsVariableMappings:
+                - group: pims-reporting-shared
+              EnvironmentVariableMappings:
+                TF_VAR_environment: live
+                TF_VAR_law_resource_id: $(law_resource_id)
