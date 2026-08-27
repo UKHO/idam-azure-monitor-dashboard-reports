@@ -22,12 +22,12 @@ resource "azuredevops_check_approval" "azdo_variable_group" {
   target_resource_type = "variablegroup"
 
   approvers = [
-    data.azuredevops_group.build_admins.id,
-    data.azuredevops_group.release_admins.id
+    data.azuredevops_group.build_admins.origin_id,
+    data.azuredevops_group.release_admins.origin_id
   ]
 
   instructions               = "Please review and approve the variable group for ${local.service_name}."
   minimum_required_approvers = 1
   requester_can_approve      = true
-  timeout                    = 60
+  timeout                    = 30
 }

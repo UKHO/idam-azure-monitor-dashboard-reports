@@ -10,7 +10,7 @@ resources:
       type: github
       endpoint: UKHO
       name: UKHO/devops-azdo-yaml-pipeline-templates
-      ref: refs/tags/0.2.0
+      ref: refs/tags/0.3.0
 
 trigger:
   branches:
@@ -40,7 +40,6 @@ variables:
     value: m-spokeconnect-uksouth-rg
   - name: TFStateBlobNameShard
     value: azure-dashboard-{0}.tfstate
-  - group: pims-reporting shared
 
 pr:
   autoCancel: "true" # indicates whether additional pushes to a PR should cancel in-progress runs for the same PR. Defaults to true
@@ -58,27 +57,6 @@ extends:
   parameters:
     RelativePathToTerraformFiles: ${{ variables.RelativePathToTerraformFiles }}
     TerraformVersion: 1.15.1
-    TerraformBuildInjectionSteps:
-    #     - task: UkhoSnykScanTask@0
-    #       displayName: 'Snyk IaC scan'
-    #       inputs:
-    #         failOnIssues: true
-    #         failOnThreshold: high
-    #         additionalArguments: --fail-on=upgradable
-    #         organization: $(SNYK-ORG-ID) # Need to get this somewhere...
-    #         serviceConnectionEndpoint: Snyk
-    #         severityThreshold: low
-    #         testType: iac
-    #         monitorwhen: never
-    #         testDirectory: "$(Pipeline.Workspace)/$(Build.Repository.Name)/${{ variables.RelativePathToTerraformFiles }}"
-    #
-    #     - task: PublishPipelineArtifact@1
-    #       displayName: 'Publish Snyk scan results'
-    #       condition: succeededOrFailed()
-    #       inputs:
-    #         targetPath: '$(Agent.TempDirectory)'
-    #         artifact: Snyk_Scan
-    #         publishLocation: 'pipeline'
     EnvironmentConfigs:
       - Name: dev
         Stage:
@@ -95,6 +73,8 @@ extends:
             key: ${{ format(variables.TFStateBlobNameShard, 'dev') }}
           RunMode: 'PlanVerifyApply'
           VerificationMode: 'VerifyOnDestroy'
+          JobsVariableMappings:
+            - group: pims-reporting-shared
           EnvironmentVariableMappings:
             TF_VAR_environment: dev
             TF_VAR_law_resource_id: $(law_resource_id)
@@ -115,6 +95,8 @@ extends:
                 key: ${{ format(variables.TFStateBlobNameShard, 'live') }}
               RunMode: 'PlanVerifyApply'
               VerificationMode: 'VerifyOnAny'
+              JobsVariableMappings:
+                - group: pims-reporting-shared
               EnvironmentVariableMappings:
                 TF_VAR_environment: live
                 TF_VAR_law_resource_id: $(law_resource_id)

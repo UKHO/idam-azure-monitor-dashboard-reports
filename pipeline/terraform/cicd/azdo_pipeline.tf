@@ -39,14 +39,14 @@ resource "azuredevops_build_definition" "this" {
   project_id      = data.azuredevops_project.this.id
   name            = local.pipeline_name
   agent_pool_name = data.azuredevops_agent_queue.this.name
-  path            = "\\${local.repository_name}\\${local.service_name}"
+  path            = "\\${local.repository_name}"
 
   repository {
     repo_type             = "GitHub"
-    repo_id               = data.github_repository.this.id
+    repo_id               = data.github_repository.this.full_name
     branch_name           = "refs/heads/main"
     yml_path              = "pipeline/yaml/azure-dashboard-pipeline.yml"
-    service_connection_id = data.azuredevops_serviceendpoint_github.this.id
+    service_connection_id = data.azuredevops_serviceendpoint_github.this.service_endpoint_id
   }
 
   ci_trigger {
@@ -54,7 +54,8 @@ resource "azuredevops_build_definition" "this" {
   }
 
   pull_request_trigger {
-    use_yaml = true
+    initial_branch = "refs/heads/main"
+    use_yaml       = true
     forks {
       enabled       = false
       share_secrets = false
