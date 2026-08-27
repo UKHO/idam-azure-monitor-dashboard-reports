@@ -48,7 +48,7 @@ pr:
       - "*"
   paths:
     include:
-      - src/terraform/*
+      - src/terraform/**
       - pipeline/yaml/azure-dashboard-pipeline.yml
   drafts: "false"
 

@@ -46,15 +46,6 @@ param(
     })]
     [string]$SubscriptionId,
     
-    [Parameter(Mandatory = $true)]
-    [ValidateScript({
-        if ( [guid]::TryParse($_, [ref][guid]::Empty))
-        {
-            return $true
-        }
-        throw "TenantId must be a valid GUID"
-    })]
-    [string]$TenantId,
 
     [switch]$SkipValidation
 )
