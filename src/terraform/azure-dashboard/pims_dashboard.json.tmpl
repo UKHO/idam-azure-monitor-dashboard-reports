@@ -1,6 +1,6 @@
 {
   "version": "Notebook/1.0",
-  "name": "PIMs Reporting Dashboard",
+  "name": "Questionable PIMs Assignments",
   "items": [
     {
       "type": 9,
@@ -46,26 +46,8 @@
             "timeContextFromParameter": null,
             "key": "41f2d571-b317-47f4-a084-9af6196d1334",
             "value": {
-              "durationMs": 2592000000
+              "durationMs": 1209600000
             }
-          },
-          {
-            "id": "6978fa90-8dd5-4cf8-b42e-a2e92ea79583",
-            "version": "KqlParameterItem/1.0",
-            "name": "OnlyUsersParameter",
-            "label": "Display only users?",
-            "type": 2,
-            "isRequired": true,
-            "multiSelect": false,
-            "isHiddenWhenLocked": false,
-            "typeSettings": {
-              "additionalResourceOptions": [],
-              "showDefault": false
-            },
-            "jsonData": "[\r\n  { \"value\": \"true\", \"label\": \"Yes\" },\r\n  { \"value\": \"false\", \"label\": \"No\", \"selected\": true }\r\n]",
-            "timeContextFromParameter": null,
-            "key": "6978fa90-8dd5-4cf8-b42e-a2e92ea79583",
-            "value": "false"
           }
         ],
         "title": ""
@@ -102,7 +84,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| count",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| where Result =~ \"success\"\n| count",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -131,7 +113,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| extend Role = tostring(TargetResources[0].displayName)\n| mv-apply TR = TargetResources on (\n    summarize\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        HasUser = countif(TR.type =~ \"User\") > 0\n  )\n| where {OnlyUsersParameter} == false or HasUser == true\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserName) and isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserEmail), UserEmail,\n    \"\"\n  )\n| extend Actor = strcat(InitiatedBy.user.userPrincipalName, \" (\", InitiatedBy.user.displayName, \")\")\n| project TimeGenerated, TargetEntityName, Role, ResultDescription, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| project TimeGenerated, TargetEntityName, Role, ResultDescription, Actor, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -241,7 +223,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| count",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| where Result =~ \"success\"\n| count",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -270,7 +252,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| extend Role = tostring(TargetResources[0].displayName)\n| mv-apply TR = TargetResources on (\n    summarize\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        HasUser = countif(TR.type =~ \"User\") > 0\n  )\n| where {OnlyUsersParameter} == false or HasUser == true\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserName) and isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserEmail), UserEmail,\n    \"\"\n  )\n| extend Actor = strcat(InitiatedBy.user.userPrincipalName, \" (\", InitiatedBy.user.displayName, \")\")\n| extend Type = iff(OperationName has \"permanent\", \"Permanent\", \"Timebound\")\n| project TimeGenerated, TargetEntityName, Role, Type, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| extend Type = iff(OperationName has \"permanent\", \"Permanent\", \"Timebound\")\n| project TimeGenerated, TargetEntityName, Role, Type, Actor, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -379,7 +361,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| count",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| where Result =~ \"success\"\n| count",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -425,7 +407,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| extend Role = tostring(TargetResources[0].displayName)\n| mv-apply TR = TargetResources on (\n    summarize\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        HasUser = countif(TR.type =~ \"User\") > 0\n  )\n| where {OnlyUsersParameter} == false or HasUser == true\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserName) and isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserEmail), UserEmail,\n    \"\"\n  )\n| extend Actor = strcat(InitiatedBy.user.userPrincipalName, \" (\", InitiatedBy.user.displayName, \")\")\n| project TimeGenerated, TargetEntityName, Role, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| project TimeGenerated, TargetEntityName, Role, Actor, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -501,7 +483,7 @@
         "w": 24,
         "h": 6,
         "x": 0,
-        "y": 44
+        "y": 42
       },
       "conditionalVisibilities": [
         {
@@ -534,7 +516,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AzureActivity\r\n| where OperationNameValue contains \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\r\n| where ActivityStatusValue contains \"Success\"\r\n| extend authorizationJson = parse_json(Authorization)\r\n| extend\r\n    PrincipalType = tostring(authorizationJson.evidence.principalType),\r\n    Role = tostring(authorizationJson.evidence.role),\r\n    RoleAssignmentScope = tostring(authorizationJson.evidence.roleAssignmentScope)\r\n| where PrincipalType =~ \"User\"\r\n| count",
+        "query": "AzureActivity\r\n| where OperationNameValue =~ \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\r\n| where ActivityStatusValue =~ \"Success\"\r\n| extend PrincipalType = tostring(parse_json(Authorization).evidence.principalType)\r\n| where PrincipalType =~ \"User\"\r\n| count",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -575,7 +557,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AzureActivity\n| where OperationNameValue contains \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\n| where ActivityStatusValue contains \"Success\"\n| extend authorizationJson = parse_json(Authorization)\n| extend\n    PrincipalType = tostring(authorizationJson.evidence.principalType),\n    Role = tostring(authorizationJson.evidence.role),\n    RoleAssignmentScope = tostring(authorizationJson.evidence.roleAssignmentScope)\n| where PrincipalType =~ \"User\"\n| project TimeGenerated, Caller, Role, RoleAssignmentScope, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AzureActivity\n| where OperationNameValue =~ \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\n| where ActivityStatusValue =~ \"Success\"\n| extend authorizationJson = parse_json(Authorization)\n| extend\n    PrincipalType = tostring(authorizationJson.evidence.principalType),\n    Role = tostring(authorizationJson.evidence.role),\n    RoleAssignmentScope = tostring(authorizationJson.evidence.roleAssignmentScope)\n| where PrincipalType =~ \"User\"\n| project TimeGenerated, Caller, Role, RoleAssignmentScope, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -642,7 +624,7 @@
         "gridSettings": {
           "formatters": [
             {
-              "columnMatch": "TargetResources",
+              "columnMatch": "Authorization",
               "formatter": 1,
               "formatOptions": {
                 "linkTarget": "CellDetails",
@@ -659,7 +641,7 @@
         "w": 24,
         "h": 6,
         "x": 0,
-        "y": 42
+        "y": 60
       },
       "conditionalVisibilities": [
         {
@@ -684,3 +666,4 @@
   "workbookPin": "",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
+
