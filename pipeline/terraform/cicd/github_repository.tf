@@ -8,7 +8,7 @@ resource "github_repository" "this" {
   allow_update_branch         = true
   auto_init                   = false
   delete_branch_on_merge      = true
-  description                 = "Terraform and KQL for Azure Dashboard for reporting on PIMs activations."
+  description                 = "Terraform and KQL for Azure Monitor Dashboard Reports."
   has_discussions             = false
   has_issues                  = false
   has_projects                = false

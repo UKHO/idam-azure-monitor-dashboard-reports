@@ -1,17 +1,5 @@
 locals {
   status_checks = {
-    /*    snyk_code = {
-      context        = "code/snyk (${local.team_name})"
-      integration_id = data.github_app.snyk_io_eu.id
-    }
-    snyk_license = {
-      context        = "license/snyk (${local.team_name})"
-      integration_id = data.github_app.snyk_io_eu.id
-    }
-    snyk_security = {
-      context        = "security/snyk (${local.team_name})"
-      integration_id = data.github_app.snyk_io_eu.id
-    }*/
     terraform_pipeline = {
       context        = local.pipeline_name
       integration_id = data.github_app.azure_pipelines.id
@@ -35,7 +23,7 @@ resource "github_repository_ruleset" "main" {
   rules {
     deletion                = true
     non_fast_forward        = true
-    required_linear_history = true
+    required_linear_history = false
 
     required_status_checks {
       strict_required_status_checks_policy = true
