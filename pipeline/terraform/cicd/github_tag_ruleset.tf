@@ -1,6 +1,6 @@
 resource "github_repository_ruleset" "prevent_tag_deletion" {
   name        = "prevent-tag-deletion"
-  repository  = data.github_repository.this.name
+  repository  = github_repository.this.name
   enforcement = "active"
   target      = "tag"
 
