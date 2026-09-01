@@ -2,7 +2,7 @@
 
 ## Overview
 
-- One-paragraph description of what this project does and its architecture.
+- This repository contains Terraform and KQL-backed Azure Monitor Workbook(s) for generating Azure Monitor dashboard reports, plus CI/CD infrastructure under `pipeline/`.
 
 ## Tech Stack
 
