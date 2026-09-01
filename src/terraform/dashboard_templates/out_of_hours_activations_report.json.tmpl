@@ -1,0 +1,272 @@
+{
+  "version": "Notebook/1.0",
+  "name": "Out of Hours Activations Report",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "41f2d571-b317-47f4-a084-9af6196d1334",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "key": "41f2d571-b317-47f4-a084-9af6196d1334",
+            "value": {
+              "durationMs": 1209600000
+            }
+          },
+          {
+            "id": "a1000000-0000-0000-0000-000000000003",
+            "version": "KqlParameterItem/1.0",
+            "name": "Roles",
+            "type": 2,
+            "isRequired": false,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "isHiddenWhenLocked": true,
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "jsonData": "[{\"value\":\"Agent ID Administrator\",\"label\":\"Agent ID Administrator\"},{\"value\":\"AI Administrator\",\"label\":\"AI Administrator\"},{\"value\":\"AI Reader\",\"label\":\"AI Reader\"},{\"value\":\"Application Administrator\",\"label\":\"Application Administrator\"},{\"value\":\"Application Developer\",\"label\":\"Application Developer\"},{\"value\":\"Attribute Provisioning Administrator\",\"label\":\"Attribute Provisioning Administrator\"},{\"value\":\"Attribute Provisioning Reader\",\"label\":\"Attribute Provisioning Reader\"},{\"value\":\"Authentication Administrator\",\"label\":\"Authentication Administrator\"},{\"value\":\"Authentication Extensibility Administrator\",\"label\":\"Authentication Extensibility Administrator\"},{\"value\":\"Authentication Extensibility Password Administrator\",\"label\":\"Authentication Extensibility Password Administrator\"},{\"value\":\"B2C IEF Keyset Administrator\",\"label\":\"B2C IEF Keyset Administrator\"},{\"value\":\"Cloud Application Administrator\",\"label\":\"Cloud Application Administrator\"},{\"value\":\"Cloud Device Administrator\",\"label\":\"Cloud Device Administrator\"},{\"value\":\"Conditional Access Administrator\",\"label\":\"Conditional Access Administrator\"},{\"value\":\"Directory Writers\",\"label\":\"Directory Writers\"},{\"value\":\"Domain Name Administrator\",\"label\":\"Domain Name Administrator\"},{\"value\":\"External Identity Provider Administrator\",\"label\":\"External Identity Provider Administrator\"},{\"value\":\"Global Administrator\",\"label\":\"Global Administrator\"},{\"value\":\"Global Reader\",\"label\":\"Global Reader\"},{\"value\":\"Helpdesk Administrator\",\"label\":\"Helpdesk Administrator\"},{\"value\":\"Hybrid Identity Administrator\",\"label\":\"Hybrid Identity Administrator\"},{\"value\":\"Identity Governance Administrator\",\"label\":\"Identity Governance Administrator\"},{\"value\":\"Intune Administrator\",\"label\":\"Intune Administrator\"},{\"value\":\"Lifecycle Workflows Administrator\",\"label\":\"Lifecycle Workflows Administrator\"},{\"value\":\"Partner Tier1 Support\",\"label\":\"Partner Tier1 Support\"},{\"value\":\"Partner Tier2 Support\",\"label\":\"Partner Tier2 Support\"},{\"value\":\"Password Administrator\",\"label\":\"Password Administrator\"},{\"value\":\"Privileged Authentication Administrator\",\"label\":\"Privileged Authentication Administrator\"},{\"value\":\"Privileged Role Administrator\",\"label\":\"Privileged Role Administrator\"},{\"value\":\"Security Administrator\",\"label\":\"Security Administrator\"},{\"value\":\"Security Operator\",\"label\":\"Security Operator\"},{\"value\":\"Security Reader\",\"label\":\"Security Reader\"},{\"value\":\"Tenant Governance Administrator\",\"label\":\"Tenant Governance Administrator\"},{\"value\":\"User Administrator\",\"label\":\"User Administrator\"},{\"value\":\"Entra SOC Identity Responder\",\"label\":\"Entra SOC Identity Responder\"}]",
+            "timeContext": {
+              "durationMs": 2592000000
+            },
+            "defaultValue": "value::all",
+            "key": "a1000000-0000-0000-0000-000000000003"
+          },
+          {
+            "id": "a1000000-0000-0000-0000-000000000004",
+            "version": "KqlParameterItem/1.0",
+            "name": "Groups",
+            "type": 2,
+            "isRequired": false,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "isHiddenWhenLocked": true,
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"PG_DDC_Administrators\",\"label\":\"PG_DDC_Administrators\"},\r\n{\"value\":\"PG_ITSO_Administrators\",\"label\":\"PG_ITSO_Administrators\"},\r\n{\"value\":\"PG_Helpdesk_Administrators\",\"label\":\"PG_Helpdesk_Administrators\"},\r\n{\"value\":\"PG_AI-Administrators\",\"label\":\"PG_AI-Administrators\"},\r\n{\"value\":\"PG_TechnicalSystems_Administrators\",\"label\":\"PG_TechnicalSystems_Administrators\"},\r\n{\"value\":\"PG_TechSys_CloudAdmin\",\"label\":\"PG_TechSys_CloudAdmin\"},\r\n{\"value\":\"PG_TechSys_FirewallAdmin\",\"label\":\"PG_TechSys_FirewallAdmin\"}\r\n]",
+            "timeContext": {
+              "durationMs": 2592000000
+            },
+            "timeContextFromParameter": null,
+            "defaultValue": "value::all",
+            "key": "a1000000-0000-0000-0000-000000000004"
+          },
+          {
+            "id": "a1000000-0000-0000-0000-000000000005",
+            "version": "KqlParameterItem/1.0",
+            "name": "BusinessHours",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All\"},\r\n{\"value\":\"In\",\"label\":\"In Hours (07:00-19:00 Mon-Fri)\"},\r\n{\"value\":\"Out\",\"label\":\"Out of Hours\", \"selected\": true }\r\n]",
+            "key": "a1000000-0000-0000-0000-000000000005",
+            "value": "Out"
+          }
+        ],
+        "style": "pills"
+      },
+      "name": "parameters",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let BusinessStartHour = 7;\nlet BusinessEndHour = 19;\n\nlet RoleActivations = AuditLogs\n    | where Category == \"RoleManagement\"\n    | where Result =~ \"success\"\n    | where OperationName == \"Add member to role completed (PIM activation)\"\n    | mv-apply IB = InitiatedBy on (\n        summarize\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n    )\n    | extend Actor = case(\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n        \"Unknown\"\n    )\n    | mv-apply TR = TargetResources on (\n        summarize Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\")\n    )\n    | where Actor != \"Azure AD PIM\"\n    | where isnotempty(Role)\n    | where Role in ({Roles:value})\n    | extend Target = Role, Type = \"Role\";\n\nlet GroupActivations = AuditLogs\n    | where Category == \"GroupManagement\"\n    | where Result =~ \"success\"\n    | where OperationName == \"Add member to role completed (PIM activation)\"\n    | mv-apply IB = InitiatedBy on (\n        summarize\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n    )\n    | extend Actor = case(\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n        \"Unknown\"\n    )\n    | mv-apply TR = TargetResources on (\n        summarize \n            GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\" or TR.type =~ \"Other\")\n    )\n    | where Actor != \"Azure AD PIM\"\n    | where isnotempty(GroupName)\n    | where GroupName in ({Groups:value})\n    | extend Target = GroupName, Type = \"Group\";\n\nunion RoleActivations, GroupActivations\n| extend LocalTime = datetime_utc_to_local(TimeGenerated, 'Europe/London')\n| extend DOW = dayofweek(LocalTime) / 1d\n| extend HoursFlag = iff(hourofday(LocalTime) between (BusinessStartHour .. BusinessEndHour - 1) and DOW !in (0, 6), \"In\", \"Out\")\n| where '{BusinessHours}' == \"All\" or HoursFlag == '{BusinessHours}'\n| summarize Count = count() by Target, Type\n| order by Count desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "visualization": "piechart",
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "series",
+            "parameterName": "SelectedTarget",
+            "defaultValue": "All"
+          }
+        ],
+        "gridSettings": {
+          "rowLimit": 1000,
+          "sortBy": [
+            {
+              "itemKey": "TimeGenerated",
+              "sortOrder": 2
+            }
+          ],
+          "formatters": [
+            {
+              "columnMatch": "AdditionalDetails",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "TargetResources",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ]
+        },
+        "chartSettings": {
+          "showLegend": false,
+          "seriesLabelSettings": [],
+          "group": "Target",
+          "createOtherGroup": 25,
+          "showMetrics": true,
+          "legendSettings": {
+            "position": "bottom"
+          },
+          "animation": {
+            "key": "off"
+          }
+        },
+        "title": "Privilege Roles & Groups Activations",
+        "timeContextFromParameter": "TimeRange",
+        "noDataMessage": "No privileged roles or groups were activated during the times selected.",
+        "showViewButton": false
+      },
+      "customWidth": "70",
+      "name": "pie-privilege-roles-groups-activations",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 2,
+        "w": 11,
+        "h": 19
+      }
+    },
+    {
+      "type": 3,
+      "name": "grid-privilege-roles-groups-activations",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Details",
+        "query": "let BusinessStartHour = 7;\r\nlet BusinessEndHour = 19;\r\n\r\nlet RoleActivations = AuditLogs\r\n    | where Category == \"RoleManagement\"\r\n    | where Result =~ \"success\"\r\n    | where OperationName == \"Add member to role completed (PIM activation)\"\r\n    | mv-apply IB = InitiatedBy on (\r\n        summarize\r\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\r\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\r\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\r\n    )\r\n    | extend Actor = case(\r\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\r\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\r\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\r\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\r\n        \"Unknown\"\r\n    )\r\n    | mv-apply TR = TargetResources on (\r\n        summarize Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\")\r\n    )\r\n    | where Actor != \"Azure AD PIM\"\r\n    | where isnotempty(Role)\r\n    | where Role in ({Roles:value})\r\n    | extend Target = Role, Type = \"Role\";\r\n\r\nlet GroupActivations = AuditLogs\r\n    | where Category == \"GroupManagement\"\r\n    | where Result =~ \"success\"\r\n    | where OperationName == \"Add member to role completed (PIM activation)\"\r\n    | mv-apply IB = InitiatedBy on (\r\n        summarize\r\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\r\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\r\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\r\n    )\r\n    | extend Actor = case(\r\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\r\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\r\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\r\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\r\n        \"Unknown\"\r\n    )\r\n    | mv-apply TR = TargetResources on (\r\n        summarize \r\n            GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\" or TR.type =~ \"Other\")\r\n    )\r\n    | where Actor != \"Azure AD PIM\"\r\n    | where isnotempty(GroupName)\r\n    | where GroupName in ({Groups:value})\r\n    | extend Target = GroupName, Type = \"Group\";\r\n\r\nunion RoleActivations, GroupActivations\r\n| extend LocalTime = datetime_utc_to_local(TimeGenerated, 'Europe/London')\r\n| extend DOW = dayofweek(LocalTime) / 1d\r\n| extend HoursFlag = iff(hourofday(LocalTime) between (BusinessStartHour .. BusinessEndHour - 1) and DOW !in (0, 6), \"In\", \"Out\")\r\n| where '{BusinessHours}' == \"All\" or HoursFlag == '{BusinessHours}'\r\n| where '{SelectedTarget}' == 'All' or Target == '{SelectedTarget}'\r\n| order by TimeGenerated desc\r\n| project TimeGenerated, Actor, Target, Justification = ResultReason, CorrelationId",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "CorrelationId",
+            "parameterName": "CorrelationId"
+          }
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "noDataMessage": "No privileged roles or groups were activated during the times selected.",
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 13,
+        "h": 19,
+        "x": 11,
+        "y": 2
+      }
+    },
+    {
+      "type": 3,
+      "name": "grid-correlation-id",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Records by CorrelationId",
+        "query": "// Counts by table names\nAuditLogs\n| where Category == \"RoleManagement\" or Category == \"GroupManagement\"\n| where CorrelationId == '{CorrelationId}'",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 7,
+        "x": 0,
+        "y": 21
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "CorrelationId",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        }
+      ]
+    }
+  ],
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
+  "layout": {
+    "type": "grid"
+  }
+}
