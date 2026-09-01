@@ -16,24 +16,20 @@ trigger:
   branches:
     include:
       - main
-      - "feat*/*/main" # allow feature main branches
-      - "Feat*/*/main"
-      - "bug*/*/main" # allow bugfix main branches
-      - "Bug*/*/main"
-      - "fix*/*/main" # allow hotfix main branches
-      - "Fix*/*/main"
+      - "feature/*/main"
+      - "fix/*/main"
 
 variables:
   - name: BuildCounter
     value: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
   - name: ServiceName
-    value: pims-reporting
+    value: azure-monitor-dashboard-reports
   - name: RelativePathToTerraformFiles
-    value: src/terraform/azure-dashboard
+    value: src/terraform
   - name: ServiceConnection
     value: Identity Access Management Live
   - name: TFStateContainerName
-    value: idam-azure-dashboard-pims-reporting-tfstate
+    value: idam-azure-monitor-dashboard-reports-tfstate
   - name: TFStateStorageAccountName
     value: idamlivesa
   - name: TFStateResourceGroupName
@@ -74,7 +70,7 @@ extends:
           RunMode: 'PlanVerifyApply'
           VerificationMode: 'VerifyOnDestroy'
           JobsVariableMappings:
-            - group: pims-reporting-shared
+            - group: "${{ variables.ServiceName }}-shared"
           EnvironmentVariableMappings:
             TF_VAR_environment: dev
             TF_VAR_law_resource_id: $(law_resource_id)
@@ -96,7 +92,7 @@ extends:
               RunMode: 'PlanVerifyApply'
               VerificationMode: 'VerifyOnAny'
               JobsVariableMappings:
-                - group: pims-reporting-shared
+                - group: "${{ variables.ServiceName }}-shared"
               EnvironmentVariableMappings:
                 TF_VAR_environment: live
                 TF_VAR_law_resource_id: $(law_resource_id)
