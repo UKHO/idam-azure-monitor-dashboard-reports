@@ -1,3 +1,3 @@
 locals {
-  service_name = "workbook-reporting"
+  service_name = "azure-monitor-dashboard-reports"
 }
