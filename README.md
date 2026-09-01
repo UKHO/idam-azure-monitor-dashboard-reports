@@ -1,6 +1,6 @@
 # In-depth Documentation for idam-azure-dashboard-pims-reporting
 
-This document provides detailed information on the `idam-azure-dashboard-pims-reporting` project, including setup, configuration, usage details, and contribution guidelines.
+This document provides detailed information on the `idam-azure-monitor-dashboard-reports` project, including setup, configuration, usage details, and contribution guidelines.
 
 ## Overview
 
