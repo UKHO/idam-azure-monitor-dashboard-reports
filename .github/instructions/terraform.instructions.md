@@ -14,11 +14,10 @@ applyTo: '**/*.tf'
 
 - Always use the latest stable version of Terraform and its providers.
   - Regularly update your Terraform configurations to incorporate security patches and improvements.
-- Store sensitive information in a secure manner, such as using AWS Secrets Manager or SSM Parameter Store.
+- Store sensitive information in a secure secrets manager (for Azure, use Azure Key Vault).
   - Regularly rotate credentials and secrets.
-  - Automate the rotation of secrets, where possible.
-- Use AWS environment variables to reference values stored in AWS Secrets Manager or SSM Parameter Store.
-  - This keeps sensitive values out of your Terraform state files.
+  - Automate rotation where possible.
+- Use environment variables (for example, `TF_VAR_*`) or your CI secret store to inject secrets at runtime.
 - Never commit sensitive information such as AWS credentials, API keys, passwords, certificates, or Terraform state to version control.
   - Use `.gitignore` to exclude files containing sensitive information from version control.
 - Always mark sensitive variables as `sensitive = true` in your Terraform configurations.
