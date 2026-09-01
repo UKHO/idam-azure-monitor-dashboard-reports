@@ -67,10 +67,6 @@ resource "github_repository_ruleset" "non_main" {
   }
 
   rules {
-    pull_request {
-      allowed_merge_methods = ["merge"]
-    }
-
     branch_name_pattern {
       operator = "regex"
       pattern  = "^(feature|fix)/[a-z0-9._-]+$"
