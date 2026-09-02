@@ -25,14 +25,6 @@ The dashboard has a **View** toggle (Registered / Deleted) and a **Month** dropd
 - Removals: `OperationName == "User deleted security info"`, `ResultReason has "Fido2 Authentication Method"`.
 - Requires Entra ID diagnostic logging to be forwarding `AuditLogs` to the workspace this workbook queries.
 
-## Links
-
-| Resource | Link |
-|----------|------|
-| Dashboard (Azure Portal) Prototype | [workbook](https://portal.azure.com/#view/Microsoft_Azure_WorkbooksExtension/Workbooks.ReactView/ComponentId/azure%20monitor/ConfigurationId/%2Fsubscriptions%2F1b770e63-1654-4ab4-885b-ad980bbdb944%2FresourceGroups%2Fpims-dashboard-proto-rg%2Fproviders%2Fmicrosoft.insights%2Fworkbooks%2F51d7bab8-61c0-4e7d-a188-6831dac26d26/WorkbookTemplateName/proto-fido) |
-| Dashboard (Azure Portal) | `<add live workbook URL here>` |
-| Pipeline (Azure DevOps) | Not yet built |
-
 ## Rules
 
 - ⚠️ This is a prototype without a pipeline behind it — for now, edits are made directly in the Portal. This will change once automation lands; from that point, the same rule as the other reports will apply (no manual Portal edits, changes go through Terraform + PR — see the [Questionable PIM Assignments rules](questionable-pim-assignments.md#rules) for the target pattern).

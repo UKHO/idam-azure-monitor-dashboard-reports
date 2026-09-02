@@ -39,15 +39,6 @@ The dashboard has **Time Range**, **Roles**, **Groups**, and **Business Hours** 
 - ⚠️ Bank holidays are not excluded from the business-hours calculation (see above).
 - ⚠️ Role and group lists (`Roles`/`Groups` parameters) are maintained as static lists, not derived dynamically — new Tier-0 roles or PIM-managed groups won't appear until the parameter JSON is updated manually.
 
-## Links
-
-| Resource | Link |
-|----------|------|
-| Dashboard (Azure Portal) Prototype | [workbook](https://portal.azure.com/#blade/Microsoft_Azure_WorkbooksExtension/WorkbookViewer.ReactView/ComponentId/azure%20monitor/ConfigurationId/%2Fsubscriptions%2F1b770e63-1654-4ab4-885b-ad980bbdb944%2FresourceGroups%2Fpims-dashboard-proto-rg%2Fproviders%2Fmicrosoft.insights%2Fworkbooks%2F70b6b6b9-9c64-4b45-a965-2edc38821e64/WorkbookTemplateName/Out-Of-Hours-Activations) |
-| Dashboard (Azure Portal) | `<add live workbook URL here>` |
-| Pipeline (Azure DevOps) | Not yet built |
-| Related PBI | `pbi-out-of-hours-pim-activation-reporting.md` |
-
 ## Rules
 
 - ⚠️ This is a prototype without a pipeline behind it — for now, edits are made directly in the Portal. This will change once automation lands; from that point, no manual Portal edits, changes go through Terraform + PR (see the [Questionable PIM Assignments rules](questionable-pim-assignments.md#rules) for the target pattern).

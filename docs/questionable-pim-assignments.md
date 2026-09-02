@@ -29,15 +29,6 @@ The report queries Entra ID / Azure `AuditLogs` and RBAC role-assignment events 
 
 Requires Entra ID and Azure RBAC diagnostic logging to be forwarding the relevant logs to the workspace this workbook queries.
 
-## Links
-
-| Resource | Link |
-|----------|------|
-| Template | [`questionable_pim_assignments_report.json.tmpl`](../src/terraform/dashboard_templates/questionable_pim_assignments_report.json.tmpl) |
-| Dev Dashboard (Azure Portal) | `<add dev workbook URL here>` |
-| Live Dashboard (Azure Portal) | `<add live workbook URL here>` |
-| Pipeline (Azure DevOps) | `<add pipeline URL here>` |
-
 ## Rules
 
 - ⚠️ **Do not manually edit the Live workbook in the Azure Portal.** Any changes must go through Terraform and the pipeline, or they'll be overwritten/lost on the next deploy.
