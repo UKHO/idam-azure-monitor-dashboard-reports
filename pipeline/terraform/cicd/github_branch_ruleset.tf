@@ -69,7 +69,7 @@ resource "github_repository_ruleset" "non_main" {
   rules {
     branch_name_pattern {
       operator = "regex"
-      pattern  = "^(feature|fix)/[a-z0-9._-]+$"
+      pattern  = "^(feature|fix)/[a-z0-9._-/]+$"
       name     = "lowercase-feature-fix-prefix"
       negate   = false
     }

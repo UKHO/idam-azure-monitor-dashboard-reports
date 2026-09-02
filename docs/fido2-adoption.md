@@ -8,11 +8,11 @@ Data is queried live using KQL against a Log Analytics Workspace — there is no
 
 ## Status
 
-**Prototype.** This workbook is currently deployed manually via the Azure Portal, not yet via Terraform/pipeline. Automated deployment (moving its definition into [`src/terraform/dashboard_templates`](../src/terraform/dashboard_templates)) is a tracked follow-up item.
+This workbook is currently deployed manually via the Azure Portal, not yet via Terraform/pipeline. Automated deployment (moving its definition into [`src/terraform/dashboard_templates`](../src/terraform/dashboard_templates)) is a tracked follow-up item.
 
 ## What can you search for?
 
-The dashboard has a **View** toggle (Registered / Deleted) and a **Month** dropdown, driving two panels:
+The dashboard has a **View** toggle (Registered / Deleted) and a **Month** dropdown, driving three panels:
 
 - **Overview** — a bar chart of activity count. Shows all months from November 2025 to present when Month is set to "None"; switches to a day-by-day breakdown of the selected month when a specific month is chosen. Only months with recorded activity appear in the Month dropdown.
 - **Details** — a table of individual registration/removal events for the selected month, showing timestamp, user, and correlation ID. Only visible once a specific month is selected.

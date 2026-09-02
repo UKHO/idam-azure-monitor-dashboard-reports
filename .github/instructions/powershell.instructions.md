@@ -196,7 +196,7 @@ function Update-ResourceStatus {
 - **ShouldProcess Implementation:**
   - Use `[CmdletBinding(SupportsShouldProcess = $true)]`
   - Set appropriate `ConfirmImpact` level
-  - Call `$PSCmdlet.ShouldProcess()` as close the the changes action
+  - Call `$PSCmdlet.ShouldProcess()` as close as possible to the action that makes the change
   - Use `$PSCmdlet.ShouldContinue()` for additional confirmations
 
 - **Message Streams:**

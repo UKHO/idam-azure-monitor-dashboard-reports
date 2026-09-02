@@ -29,6 +29,9 @@ resource "github_repository" "this" {
       status = "enabled"
     }
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "github_repository_vulnerability_alerts" "this" {

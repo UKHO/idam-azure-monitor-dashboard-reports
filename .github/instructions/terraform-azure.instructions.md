@@ -38,7 +38,7 @@ When operating in chat mode with these instructions loaded:
 
 ## 1. Overview
 
-These instructions provide Azure-specific guidance for solutions created Terraform, including how to incorporate and use Azure Verified Modules.
+These instructions provide Azure-specific guidance for solutions created with Terraform, including how to incorporate and use Azure Verified Modules.
 
 For general Terraform conventions, see [terraform.instructions.md](terraform.instructions.md).
 

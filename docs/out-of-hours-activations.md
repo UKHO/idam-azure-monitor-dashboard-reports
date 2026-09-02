@@ -8,7 +8,7 @@ Data is queried live using KQL against a Log Analytics Workspace — there is no
 
 ## Status
 
-**Prototype.** This workbook is currently deployed manually via the Azure Portal, not yet via Terraform/pipeline. Automated deployment (moving its definition into [`src/terraform/dashboard_templates`](../src/terraform/dashboard_templates)) is a tracked follow-up item.
+This workbook is currently deployed manually via the Azure Portal, not yet via Terraform/pipeline. Automated deployment (moving its definition into [`src/terraform/dashboard_templates`](../src/terraform/dashboard_templates)) is a tracked follow-up item.
 
 ## What can you search for?
 

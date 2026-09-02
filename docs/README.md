@@ -9,14 +9,14 @@ Use this page as a contents page: it gives a one-line summary of each report and
 | Report | Status | Summary |
 |--------|--------|---------|
 | [Questionable PIM Assignments](questionable-pim-assignments.md) | Live | Visualises Privileged Identity Management (PIM) activations, permanent assignments, out-of-PIM assignments, and direct RBAC assignments, to help spot non-compliant or unusual privileged access changes. |
-| [Out-of-Hours Activations](out-of-hours-activations.md) | Prototype | Visualises Tier-0 role and privileged group PIM activations, flagging whether each activation happened inside or outside defined business hours. |
-| [FIDO2 Adoption](fido2-adoption.md) | Prototype | Visualises FIDO2 security key registration and removal activity over time, to track adoption and spot unexpected removals. |
+| [Out-of-Hours Activations](out-of-hours-activations.md) | Live | Visualises Tier-0 role and privileged group PIM activations, flagging whether each activation happened inside or outside defined business hours. |
+| [FIDO2 Adoption](fido2-adoption.md) | Live | Visualises FIDO2 security key registration and removal activity over time, to track adoption and spot unexpected removals. |
 
 ## Environments
 
 Each report is deployed the same way (see the root [`README.md`](../README.md#environments) for details):
 
-- **dev** — deploys automatically on every branch push. Safe to break, safe to experiment, and the place to validate changes before merging.
+- **dev** — deploys automatically on pushes to `main` and branches matching `feature/*/main` or `fix/*/main`. It is the place to validate changes before merging.
 - **live** — deploys automatically only after a merge to `main`, once `dev` has succeeded.
 
 Reports still marked **Prototype** in the table above are not yet wired into the Terraform/pipeline in this repository and are deployed manually via the Azure Portal — see their individual pages for details and known limitations.
