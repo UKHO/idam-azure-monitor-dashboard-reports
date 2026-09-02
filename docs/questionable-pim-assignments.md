@@ -27,7 +27,7 @@ Selecting a row in any detail table filters a further panel to show every event 
 
 The report queries Entra ID / Azure `AuditLogs` and RBAC role-assignment events forwarded to the configured Log Analytics Workspace (`law_resource_id`). Each of the four sections above is backed by its own KQL query embedded in the workbook template, filtering on the relevant `Category`/`OperationName` combination for that type of assignment.
 
-Requires Entra ID and Azure RBAC diagnostic logging to be forwarding the relevant logs to the workspace this workbook queries.
+Requires Entra ID and Azure RBAC diagnostic logging to be configured to forward the relevant logs to the workspace this workbook queries.
 
 ## Rules
 

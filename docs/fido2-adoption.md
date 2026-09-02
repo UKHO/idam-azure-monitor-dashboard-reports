@@ -23,7 +23,7 @@ The dashboard has a **View** toggle (Registered / Deleted) and a **Month** dropd
 - `AuditLogs`, `Category == "UserManagement"`, `Result =~ "success"`.
 - Registrations: `OperationName == "User registered security info"`, `ResultReason has "Fido2 Authentication Method"`.
 - Removals: `OperationName == "User deleted security info"`, `ResultReason has "Fido2 Authentication Method"`.
-- Requires Entra ID diagnostic logging to be forwarding `AuditLogs` to the workspace this workbook queries.
+- Requires Entra ID diagnostic logging to be configured to forward `AuditLogs` to the workspace this workbook queries.
 
 ## Rules
 
