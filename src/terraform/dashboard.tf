@@ -17,7 +17,7 @@ locals {
   workbooks = {
     (local.questionable_pim_report_workbook_id[local.environment]) = {
       display_name       = "Questionable PIM Assignments Report"
-template_file_path = "questionable_pim_assignments_report.json.tmpl"
+      template_file_path = "questionable_pim_assignments_report.json.tmpl"
       variables = {
         law_resource_id = var.law_resource_id
       }
