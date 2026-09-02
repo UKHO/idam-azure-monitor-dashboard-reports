@@ -43,7 +43,7 @@ resource "azuredevops_build_definition" "this" {
 
   repository {
     repo_type             = "GitHub"
-    repo_id               = data.github_repository.this.full_name
+    repo_id               = github_repository.this.full_name
     branch_name           = "refs/heads/main"
     yml_path              = "pipeline/yaml/azure-dashboard-pipeline.yml"
     service_connection_id = data.azuredevops_serviceendpoint_github.this.service_endpoint_id

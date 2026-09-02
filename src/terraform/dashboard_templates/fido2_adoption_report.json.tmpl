@@ -1,0 +1,241 @@
+{
+  "version": "Notebook/1.0",
+"name": "FIDO2 Adoption Report",
+  "items": [
+    {
+      "type": 9,
+      "name": "parameters_fido",
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "c24fe8d7-e906-4e1b-bb0c-9ad546e0e1b9",
+            "version": "KqlParameterItem/1.0",
+            "name": "ViewType",
+            "label": "View",
+            "type": 2,
+            "description": "Whether to view for registrations or deletions of FIDO2.",
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n  { \"value\": \"registered\", \"label\": \"Registered\", \"selected\": true },\r\n  { \"value\": \"deleted\", \"label\": \"Deleted\" }\r\n]",
+            "key": "c24fe8d7-e906-4e1b-bb0c-9ad546e0e1b9",
+            "value": "registered"
+          },
+          {
+            "id": "8f2a8633-8ffc-416f-ac7d-eba05630fbee",
+            "version": "KqlParameterItem/1.0",
+            "name": "SelectedMonth",
+            "label": "Month",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "query": "print Month = \"None\", Display = \"None\", IsSelected = true\r\n| union (\r\n    AuditLogs\r\n    | where TimeGenerated >= datetime(2025-11-01)\r\n        and Category == \"UserManagement\"\r\n        and Result =~ \"success\"\r\n        and OperationName in (\"User registered security info\", \"User deleted security info\")\r\n        and ResultReason has \"Fido2 Authentication Method\"\r\n    | extend MonthDate = startofmonth(TimeGenerated)\r\n    | distinct MonthDate\r\n    | extend Month = format_datetime(MonthDate, 'yyyy-MM')\r\n    | extend MonthNum = datetime_part(\"month\", MonthDate)\r\n    | extend MonthAbbr = case(\r\n        MonthNum == 1, \"Jan\", MonthNum == 2, \"Feb\", MonthNum == 3, \"Mar\",\r\n        MonthNum == 4, \"Apr\", MonthNum == 5, \"May\", MonthNum == 6, \"Jun\",\r\n        MonthNum == 7, \"Jul\", MonthNum == 8, \"Aug\", MonthNum == 9, \"Sep\",\r\n        MonthNum == 10, \"Oct\", MonthNum == 11, \"Nov\", \"Dec\")\r\n    | extend Display = strcat(format_datetime(MonthDate, 'yy'), \" \", MonthAbbr)\r\n    | extend IsSelected = false\r\n    | project Month, Display, IsSelected\r\n    | order by Month desc\r\n)",
+            "crossComponentResources": [
+              "${law_resource_id}"
+            ],
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContextFromParameter": null,
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "key": "8f2a8633-8ffc-416f-ac7d-eba05630fbee"
+          }
+        ]
+      },
+      "styleSettings": {
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 0,
+        "showBorder": false,
+        "borderStyle": "light thick"
+      }
+    },
+    {
+      "type": 3,
+      "name": "barchart_fido",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "FIDO2 Overview",
+        "query": "let SelectedMonth = \"{SelectedMonth}\";\nlet IsAllTime = SelectedMonth == \"None\";\nlet RangeStart = iff(IsAllTime, datetime(2025-11-01), todatetime(strcat(SelectedMonth, \"-01\")));\nlet RangeEnd = iff(IsAllTime, now(), datetime_add('month', 1, todatetime(strcat(SelectedMonth, \"-01\"))));\nlet Events = AuditLogs\n    | where TimeGenerated >= RangeStart\n        and TimeGenerated < RangeEnd\n        and Category == \"UserManagement\"\n        and Result =~ \"success\"\n        and OperationName == \"User {ViewType} security info\"\n        and ResultReason has \"Fido2 Authentication Method\"\n    | extend Bucket = iff(IsAllTime, startofmonth(TimeGenerated), startofday(TimeGenerated))\n    | summarize Count = count() by Bucket;\nlet MonthSpine = range MonthOffset from 0 to datetime_diff('month', RangeEnd, RangeStart) step 1\n    | project Bucket = datetime_add('month', MonthOffset, startofmonth(RangeStart))\n    | where IsAllTime;\nlet DaySpine = range DayOffset from 0 to datetime_diff('day', RangeEnd, RangeStart) - 1 step 1\n    | project Bucket = datetime_add('day', DayOffset, startofday(RangeStart))\n    | where not(IsAllTime);\nlet Spine = union MonthSpine, DaySpine;\nSpine\n| join kind=leftouter Events on Bucket\n| project Label = iff(IsAllTime, format_datetime(Bucket, 'yyyy-MM'), format_datetime(Bucket, 'yyyy-MM-dd')), Count = coalesce(Count, 0)\n| order by Label asc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "xAxis": "Label",
+          "group": null,
+          "createOtherGroup": 0,
+          "showMetrics": false,
+          "animation": {
+            "key": "off"
+          }
+        },
+        "gridSettings": {
+          "sortBy": [
+            {
+              "itemKey": "Label",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 10,
+        "x": 0,
+        "y": 2
+      }
+    },
+    {
+      "type": 3,
+      "name": "grid_fido",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "FIDO Details",
+        "query": "AuditLogs\n| where TimeGenerated >= datetime(2025-11-01)\nand Category == \"UserManagement\"\nand Result =~ \"success\"\nand OperationName == \"User {ViewType} security info\"\nand ResultReason has \"Fido2 Authentication Method\"\n| where \"{SelectedMonth}\" != \"None\"\nand format_datetime(startofmonth(TimeGenerated), 'yyyy-MM') == \"{SelectedMonth}\"\n| mv-apply IB = InitiatedBy on (\n    summarize\n        UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n        UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n        ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n)\n| extend ByUser = case(\n    isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n    isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n    isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n    isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n    \"Unknown\"\n)\n| extend OnIdentity = Identity\n| project TimeGenerated, ByUser, OnIdentity, CorrelationId",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "CorrelationId",
+              "formatter": 1,
+              "formatOptions": {}
+            }
+          ]
+        },
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "CorrelationId",
+            "parameterName": "SelectedCorrelationId"
+          }
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 9,
+        "x": 0,
+        "y": 12
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "SelectedMonth",
+          "comparison": "isNotEqualTo",
+          "value": "None"
+        }
+      ]
+    },
+    {
+      "type": 3,
+      "name": "grid_fido_correlationid_registered",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "FIDO CorrelationId",
+        "query": "AuditLogs \n| where TimeGenerated >= datetime(2025-11-01)\nand CorrelationId == \"{SelectedCorrelationId}\"",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 6,
+        "x": 0,
+        "y": 21
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "SelectedCorrelationId",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        },
+        {
+          "parameterName": "SelectedMonth",
+          "comparison": "isNotEqualTo",
+          "value": "None"
+        },
+        {
+          "parameterName": "ViewType",
+          "comparison": "isEqualTo",
+          "value": "registered"
+        }
+      ]
+    },
+    {
+      "type": 3,
+      "name": "grid_fido_correlationid_deleted",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "FIDO CorrelationId",
+        "query": "AuditLogs \n| where TimeGenerated >= datetime(2025-11-01)\nand CorrelationId == \"{SelectedCorrelationId}\"",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 6,
+        "x": 0,
+        "y": 21
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "SelectedCorrelationId",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        },
+        {
+          "parameterName": "SelectedMonth",
+          "comparison": "isNotEqualTo",
+          "value": "None"
+        },
+        {
+          "parameterName": "ViewType",
+          "comparison": "isEqualTo",
+          "value": "deleted"
+        }
+      ]
+    }
+  ],
+  "layout": {
+    "type": "grid"
+  },
+  "styleSettings": {
+    "background": "lighter"
+  },
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
