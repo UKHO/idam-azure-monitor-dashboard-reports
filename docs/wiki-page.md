@@ -5,8 +5,8 @@ The IDAM team maintains a set of Azure Monitor Workbook dashboards that report o
 ## Available Reports
 
 - **Questionable PIM Assignments** — shows PIM role activations, permanent assignments, assignments made outside of PIM, and direct RBAC assignments, to help identify non-compliant or unusual privileged access changes.
-- **Out-of-Hours Activations** *(prototype)* — shows Tier-0 role and privileged group PIM activations, flagging whether each one happened inside or outside normal UK business hours.
-- **FIDO2 Adoption** *(prototype)* — shows FIDO2 security key registration and removal activity over time, to track adoption and spot unexpected removals.
+- **Out-of-Hours Activations** — shows Tier-0 role and privileged group PIM activations, flagging whether each one happened inside or outside normal UK business hours.
+- **FIDO2 Adoption** — shows FIDO2 security key registration and removal activity over time, to track adoption and spot unexpected removals.
 
 ## Environments
 
@@ -15,12 +15,10 @@ Each report has a **dev** and a **live** version. The **live** version is what s
 ## Links
 
 | Resource | Link |
-|----------|------|
-| Repository | [idam-azure-monitor-dashboard-reports](https://github.com/UKHO/idam-azure-monitor-dashboard-reports) |
-| Questionable PIM Assignments (Live) | `<add live workbook URL here>` |
-| Out-of-Hours Activations (Prototype) | `<add workbook URL here>` |
-| FIDO2 Adoption (Prototype) | `<add workbook URL here>` |
-| Pipeline (Azure DevOps) | `<add pipeline URL here>` |
+| ---------- | ------ |
+| Questionable PIM Assignments | `<add workbook URL here>` |
+| Out-of-Hours Activations | `<add workbook URL here>` |
+| FIDO2 Adoption | `<add workbook URL here>` |
 
 ## Access & Support
 
