@@ -23,7 +23,7 @@ The dashboard has **Time Range**, **Roles**, **Groups**, and **Business Hours** 
 - `AuditLogs`, `Result =~ "success"`.
 - Role activations: `Category == "RoleManagement"`, `OperationName == "Add member to role completed (PIM activation)"`.
 - Group activations: `Category == "GroupManagement"`, `OperationName == "Add member to role completed (PIM activation)"` — same operation name, different category, on the assumption PIM for Groups reuses the role-activation event naming.
-- Requires Entra ID diagnostic logging to be forwarding `AuditLogs` to the workspace this workbook queries.
+- Requires Entra ID diagnostic logging to be configured to forward `AuditLogs` to the workspace this workbook queries.
 - Actor is derived from `InitiatedBy` (user display name/UPN, falling back to app display name for service-principal-initiated activations); events actioned by the `Azure AD PIM` system principal itself are excluded.
 - Role and group activations are distinguished via `TargetResources[].type` (`Role` for roles; `Group` or `Other` for groups), extracted via `mv-apply`.
 
