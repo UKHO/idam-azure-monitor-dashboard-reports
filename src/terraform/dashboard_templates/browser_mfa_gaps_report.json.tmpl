@@ -105,8 +105,8 @@
       "name": "grid-app-browsers",
       "content": {
         "version": "KqlItem/1.0",
-        "title": "Protected applications by browser (select a row to see its sign-ins)",
-        "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where '*' in ({ProtectedApps}) or AppDisplayName in ({ProtectedApps})\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| summarize SignIns = count(), SignInsWithoutMfa = countif(MfaStatus == 'MFA not used'), NoMfaNoPolicyApplied = countif(MfaStatus == 'MFA not used' and ConditionalAccessStatus == 'notApplied'), Users = dcount(UserPrincipalName), Versions = strcat_array(make_set(Browser, 10), ', ') by AppDisplayName, BrowserFamily\n| extend PercentWithoutMfa = round(100.0 * SignInsWithoutMfa / SignIns, 1)\n| extend MFA = iff(SignInsWithoutMfa > 0, 'MFA not used', 'MFA used')\n| where '{MfaScope}' == 'All' or SignInsWithoutMfa > 0\n| project AppDisplayName, BrowserFamily, MFA, SignIns, SignInsWithoutMfa, PercentWithoutMfa, NoMfaNoPolicyApplied, Users, Versions\n| order by SignInsWithoutMfa desc, SignIns desc",
+        "title": "Protected applications (expand an application to see its browsers, select a row to see its sign-ins)",
+        "query": "let base = SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where '*' in ({ProtectedApps}) or AppDisplayName in ({ProtectedApps})\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used');\nlet byApp = base\n| summarize SignIns = count(), SignInsWithoutMfa = countif(MfaStatus == 'MFA not used'), NoMfaNoPolicyApplied = countif(MfaStatus == 'MFA not used' and ConditionalAccessStatus == 'notApplied'), Users = dcount(UserPrincipalName), Seen = strcat_array(make_set(BrowserFamily, 20), ', ') by AppDisplayName\n| extend Id = AppDisplayName, Name = AppDisplayName, Type = 'Application', ParentId = 'root', BrowserName = '*';\nlet byBrowser = base\n| summarize SignIns = count(), SignInsWithoutMfa = countif(MfaStatus == 'MFA not used'), NoMfaNoPolicyApplied = countif(MfaStatus == 'MFA not used' and ConditionalAccessStatus == 'notApplied'), Users = dcount(UserPrincipalName), Seen = strcat_array(make_set(Browser, 10), ', ') by AppDisplayName, BrowserFamily\n| extend Id = strcat(AppDisplayName, '|', BrowserFamily), Name = BrowserFamily, Type = 'Browser', ParentId = AppDisplayName, BrowserName = BrowserFamily;\nunion byApp, byBrowser\n| extend PercentWithoutMfa = round(100.0 * SignInsWithoutMfa / SignIns, 1)\n| extend MFA = iff(SignInsWithoutMfa > 0, 'MFA not used', 'MFA used')\n| where '{MfaScope}' == 'All' or SignInsWithoutMfa > 0\n| project Id, Name, Type, MFA, SignIns, SignInsWithoutMfa, PercentWithoutMfa, NoMfaNoPolicyApplied, Users, Seen, ParentId, AppName = AppDisplayName, BrowserName\n| order by SignInsWithoutMfa desc, SignIns desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -117,6 +117,22 @@
         "visualization": "table",
         "gridSettings": {
           "formatters": [
+            {
+              "columnMatch": "Id",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "ParentId",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "AppName",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "BrowserName",
+              "formatter": 5
+            },
             {
               "columnMatch": "MFA",
               "formatter": 18,
@@ -164,18 +180,35 @@
               }
             }
           ],
-          "rowLimit": 500,
+          "hierarchySettings": {
+            "idColumn": "Id",
+            "parentColumn": "ParentId",
+            "treeType": 0,
+            "expanderColumn": "Name",
+            "expandTopLevel": false
+          },
+          "labelSettings": [
+            {
+              "columnId": "Name",
+              "label": "Application / Browser"
+            },
+            {
+              "columnId": "Seen",
+              "label": "Browsers / Versions"
+            }
+          ],
+          "rowLimit": 1000,
           "filter": true
         },
         "exportedParameters": [
           {
             "parameterType": 1,
-            "fieldName": "AppDisplayName",
+            "fieldName": "AppName",
             "parameterName": "SelectedApp"
           },
           {
             "parameterType": 1,
-            "fieldName": "BrowserFamily",
+            "fieldName": "BrowserName",
             "parameterName": "SelectedBrowser"
           }
         ],
@@ -197,7 +230,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Sign-ins for the selected application and browser",
-        "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where AppDisplayName == '{SelectedApp}'\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| where BrowserFamily == '{SelectedBrowser}'\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| where '{MfaScope}' == 'All' or MfaStatus == 'MFA not used'\n| project TimeGenerated, UserPrincipalName, UserType, AppDisplayName, ResourceDisplayName, IPAddress, City = tostring(LocationDetails.city), Country = tostring(LocationDetails.countryOrRegion), OS = tostring(DeviceDetail.operatingSystem), Browser, Compliant = tostring(DeviceDetail.isCompliant), TrustType = tostring(DeviceDetail.trustType), MfaStatus, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated desc",
+        "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where AppDisplayName == '{SelectedApp}'\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| where '{SelectedBrowser}' == '*' or BrowserFamily == '{SelectedBrowser}'\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| where '{MfaScope}' == 'All' or MfaStatus == 'MFA not used'\n| project TimeGenerated, UserPrincipalName, UserType, AppDisplayName, ResourceDisplayName, IPAddress, City = tostring(LocationDetails.city), Country = tostring(LocationDetails.countryOrRegion), OS = tostring(DeviceDetail.operatingSystem), Browser, Compliant = tostring(DeviceDetail.isCompliant), TrustType = tostring(DeviceDetail.trustType), MfaStatus, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",

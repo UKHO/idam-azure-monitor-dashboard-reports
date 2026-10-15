@@ -16,8 +16,8 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/browser_mfa_gaps
 
 The dashboard has **Time Range**, **Protected Applications** and **Sign-ins Shown** parameters, driving three panels:
 
-- **Protected applications by browser** — one row per application and browser family, with sign-in count, sign-ins without MFA, the percentage without MFA, the number of MFA-less sign-ins where no Conditional Access policy applied, distinct users and the browser versions seen. Sorted by most sign-ins without MFA. Selecting a row selects that application and browser.
-- **Sign-ins for the selected application and browser** — shown once a row is selected. Lists each sign-in with time, user, user type, application, resource, IP address, location, operating system, device compliance and trust, MFA status, authentication requirement and conditional access status. Selecting a row selects that sign-in.
+- **Protected applications** — one row per application, which you can expand to see one row per browser family used for it. Each row shows sign-in count, sign-ins without MFA, the percentage without MFA, the number of MFA-less sign-ins where no Conditional Access policy applied and distinct users. Application rows list the browsers seen. Browser rows list the browser versions seen. Sorted by most sign-ins without MFA. Selecting an application row selects all of that application's sign-ins. Selecting a browser row narrows it to that browser.
+- **Sign-ins for the selected application and browser** — shown once a row is selected. Lists each sign-in (for all browsers if an application row was selected) with time, user, user type, application, resource, IP address, location, operating system, device compliance and trust, MFA status, authentication requirement and conditional access status. Selecting a row selects that sign-in.
 - **Authentication and conditional access detail** — shown once a sign-in is selected. Shows the authentication steps and conditional access policies for that sign-in's correlation ID.
 
 The parameters work like this:
