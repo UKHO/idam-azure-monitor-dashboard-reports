@@ -1,6 +1,6 @@
 {
   "version": "Notebook/1.0",
-  "name": "Unapproved Browser Sign-ins Report",
+  "name": "Browser MFA Gaps by Application Report",
   "items": [
     {
       "type": 9,
@@ -41,10 +41,41 @@
             }
           },
           {
+            "id": "e3a7c915-6d2b-4f80-9b14-8c5d1a0e7f63",
+            "version": "KqlParameterItem/1.0",
+            "name": "ProtectedApps",
+            "label": "Protected Applications",
+            "type": 2,
+            "description": "Tick the applications that are meant to be protected by MFA",
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| summarize SignIns = count() by AppDisplayName\n| order by AppDisplayName asc\n| project Value = AppDisplayName, Label = strcat(AppDisplayName, ' (', SignIns, ' sign-ins)'), Selected = false",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "*",
+              "showDefault": false
+            },
+            "timeContextFromParameter": "TimeRange",
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "crossComponentResources": [
+              "${law_resource_id}"
+            ],
+            "defaultValue": "value::all",
+            "key": "e3a7c915-6d2b-4f80-9b14-8c5d1a0e7f63",
+            "value": [
+              "value::all"
+            ]
+          },
+          {
             "id": "7d2e9a14-8c3b-4f60-b1a5-3e9f6c0d4b21",
             "version": "KqlParameterItem/1.0",
-            "name": "MfaFilter",
-            "label": "Browsers Shown",
+            "name": "MfaScope",
+            "label": "Sign-ins Shown",
             "type": 2,
             "isRequired": true,
             "multiSelect": false,
@@ -53,30 +84,9 @@
               "additionalResourceOptions": [],
               "showDefault": false
             },
-            "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All unapproved browsers\",\"selected\":true},\r\n{\"value\":\"NoMfa\",\"label\":\"Only where MFA was not used\"}\r\n]",
+            "jsonData": "[\r\n{\"value\":\"NoMfa\",\"label\":\"Only where MFA was not used\",\"selected\":true},\r\n{\"value\":\"All\",\"label\":\"All sign-ins\"}\r\n]",
             "key": "7d2e9a14-8c3b-4f60-b1a5-3e9f6c0d4b21",
-            "value": "All"
-          },
-          {
-            "id": "c4a81e55-1b7d-49e2-8f36-6a2d0b9e5c32",
-            "version": "KqlParameterItem/1.0",
-            "name": "ApprovedBrowsers",
-            "label": "Approved Browsers",
-            "type": 2,
-            "isRequired": false,
-            "multiSelect": true,
-            "quote": "'",
-            "delimiter": ",",
-            "isHiddenWhenLocked": true,
-            "typeSettings": {
-              "additionalResourceOptions": [
-                "value::all"
-              ],
-              "showDefault": false
-            },
-            "jsonData": "[\r\n{\"value\":\"Chrome\",\"label\":\"Chrome\"},\r\n{\"value\":\"Edge\",\"label\":\"Edge\"},\r\n{\"value\":\"Firefox\",\"label\":\"Firefox\"},\r\n{\"value\":\"Safari\",\"label\":\"Safari\"},\r\n{\"value\":\"Mobile Safari\",\"label\":\"Mobile Safari\"}\r\n]",
-            "defaultValue": "value::all",
-            "key": "c4a81e55-1b7d-49e2-8f36-6a2d0b9e5c32"
+            "value": "NoMfa"
           }
         ],
         "style": "pills"
@@ -92,11 +102,11 @@
     },
     {
       "type": 3,
-      "name": "grid-unapproved-browsers",
+      "name": "grid-app-browsers",
       "content": {
         "version": "KqlItem/1.0",
-        "title": "Unapproved Browsers (select a browser to see its sign-ins)",
-        "query": "SigninLogs\n| where ResultType == '0'\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| where BrowserFamily !in ({ApprovedBrowsers:value})\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| summarize SignIns = count(), Users = dcount(UserPrincipalName), SignInsWithoutMfa = countif(MfaStatus == 'MFA not used'), Versions = strcat_array(make_set(Browser, 10), ', ') by BrowserFamily\n| extend MFA = iff(SignInsWithoutMfa > 0, 'MFA not used', 'MFA used')\n| where '{MfaFilter}' == 'All' or SignInsWithoutMfa > 0\n| project BrowserFamily, SignIns, Users, MFA, SignInsWithoutMfa, Versions\n| order by SignInsWithoutMfa desc, SignIns desc",
+        "title": "Protected applications by browser (select a row to see its sign-ins)",
+        "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where '*' in ({ProtectedApps}) or AppDisplayName in ({ProtectedApps})\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| summarize SignIns = count(), SignInsWithoutMfa = countif(MfaStatus == 'MFA not used'), NoMfaNoPolicyApplied = countif(MfaStatus == 'MFA not used' and ConditionalAccessStatus == 'notApplied'), Users = dcount(UserPrincipalName), Versions = strcat_array(make_set(Browser, 10), ', ') by AppDisplayName, BrowserFamily\n| extend PercentWithoutMfa = round(100.0 * SignInsWithoutMfa / SignIns, 1)\n| extend MFA = iff(SignInsWithoutMfa > 0, 'MFA not used', 'MFA used')\n| where '{MfaScope}' == 'All' or SignInsWithoutMfa > 0\n| project AppDisplayName, BrowserFamily, MFA, SignIns, SignInsWithoutMfa, PercentWithoutMfa, NoMfaNoPolicyApplied, Users, Versions\n| order by SignInsWithoutMfa desc, SignIns desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -135,19 +145,41 @@
                 "min": 0,
                 "palette": "red"
               }
+            },
+            {
+              "columnMatch": "PercentWithoutMfa",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 100,
+                "palette": "orange"
+              }
+            },
+            {
+              "columnMatch": "NoMfaNoPolicyApplied",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "palette": "red"
+              }
             }
           ],
-          "rowLimit": 250,
+          "rowLimit": 500,
           "filter": true
         },
         "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "AppDisplayName",
+            "parameterName": "SelectedApp"
+          },
           {
             "parameterType": 1,
             "fieldName": "BrowserFamily",
             "parameterName": "SelectedBrowser"
           }
         ],
-        "noDataMessage": "No sign-ins from unapproved browsers were found in the selected time range.",
+        "noDataMessage": "No sign-ins matching the filters were found for the selected applications in the selected time range.",
         "showViewButton": false
       },
       "styleSettings": {
@@ -156,16 +188,16 @@
         "x": 0,
         "y": 2,
         "w": 24,
-        "h": 10
+        "h": 11
       }
     },
     {
       "type": 3,
-      "name": "grid-browser-signins",
+      "name": "grid-app-browser-signins",
       "content": {
         "version": "KqlItem/1.0",
-        "title": "Sign-ins for the selected browser",
-        "query": "SigninLogs\n| where ResultType == '0'\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| where BrowserFamily == '{SelectedBrowser}'\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| where '{MfaFilter}' == 'All' or MfaStatus == 'MFA not used'\n| project TimeGenerated, UserPrincipalName, UserType, AppDisplayName, ResourceDisplayName, IPAddress, City = tostring(LocationDetails.city), Country = tostring(LocationDetails.countryOrRegion), OS = tostring(DeviceDetail.operatingSystem), Browser, Compliant = tostring(DeviceDetail.isCompliant), TrustType = tostring(DeviceDetail.trustType), MfaStatus, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated desc",
+        "title": "Sign-ins for the selected application and browser",
+        "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where AppDisplayName == '{SelectedApp}'\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| where BrowserFamily == '{SelectedBrowser}'\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| where '{MfaScope}' == 'All' or MfaStatus == 'MFA not used'\n| project TimeGenerated, UserPrincipalName, UserType, AppDisplayName, ResourceDisplayName, IPAddress, City = tostring(LocationDetails.city), Country = tostring(LocationDetails.countryOrRegion), OS = tostring(DeviceDetail.operatingSystem), Browser, Compliant = tostring(DeviceDetail.isCompliant), TrustType = tostring(DeviceDetail.trustType), MfaStatus, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -208,18 +240,23 @@
             "parameterName": "SelectedCorrelationId"
           }
         ],
-        "noDataMessage": "No sign-ins found for the selected browser.",
+        "noDataMessage": "No sign-ins matching the filters were found for the selected application and browser.",
         "showViewButton": false
       },
       "styleSettings": {
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 12,
+        "y": 13,
         "w": 24,
         "h": 10
       },
       "conditionalVisibilities": [
+        {
+          "parameterName": "SelectedApp",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        },
         {
           "parameterName": "SelectedBrowser",
           "comparison": "isNotEqualTo",
@@ -233,7 +270,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Authentication and conditional access detail",
-        "query": "SigninLogs\n| where CorrelationId == '{SelectedCorrelationId}'\n| project TimeGenerated, UserPrincipalName, ResultType, ResultDescription, AuthenticationRequirement, AuthenticationDetails, ConditionalAccessStatus, ConditionalAccessPolicies\n| order by TimeGenerated asc",
+        "query": "SigninLogs\n| where CorrelationId == '{SelectedCorrelationId}'\n| project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, ResultDescription, AuthenticationRequirement, AuthenticationDetails, ConditionalAccessStatus, ConditionalAccessPolicies\n| order by TimeGenerated asc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -268,11 +305,16 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 22,
+        "y": 23,
         "w": 24,
         "h": 8
       },
       "conditionalVisibilities": [
+        {
+          "parameterName": "SelectedApp",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        },
         {
           "parameterName": "SelectedBrowser",
           "comparison": "isNotEqualTo",

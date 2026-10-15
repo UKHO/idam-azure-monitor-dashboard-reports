@@ -12,7 +12,7 @@ This access package provides access to the IDAM workbooks. It also provides limi
 - **Questionable PIM Assignments** — shows PIM role activations, permanent assignments, assignments made outside of PIM, and direct RBAC assignments, to help identify non-compliant or unusual privileged access changes.
 - **Out-of-Hours Activations** — shows Tier-0 role and privileged group PIM activations, flagging whether each one happened inside or outside normal UK business hours.
 - **FIDO2 Adoption** — shows FIDO2 security key registration and removal activity over time, to track adoption and spot unexpected removals.
-- **Unapproved Browser Sign-ins** — lists browsers used in successful sign-ins that are not on the approved list, and shows whether MFA was used, to focus on unapproved browsers without MFA.
+- **Browser MFA Gaps by Application** — for a chosen set of protected applications, shows which browsers are signing in without MFA, to find applications reachable without MFA.
 
 ## Environments
 
@@ -25,7 +25,7 @@ Each report has a **dev** and a **live** version. The **live** version is what s
 | Questionable PIM Assignments | `<add workbook URL here>` |
 | Out-of-Hours Activations | `<add workbook URL here>` |
 | FIDO2 Adoption | `<add workbook URL here>` |
-| Unapproved Browser Sign-ins | `<add workbook URL here>` |
+| Browser MFA Gaps by Application | `<add workbook URL here>` |
 
 ## Access & Support
 

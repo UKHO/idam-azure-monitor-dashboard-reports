@@ -14,7 +14,7 @@ locals {
     "live" = "b50004f9-8aca-491d-aaca-ef5704474839"
   }
 
-  unapproved_browser_signins_report_workbook_id = {
+  browser_mfa_gaps_report_workbook_id = {
     "dev"  = "3f7c1b62-5d0e-4a8f-9c41-2b6e8d1a7f53",
     "live" = "a91d4e07-6c3b-4f25-8e7a-0d5b2c9f1e84"
   }
@@ -41,9 +41,9 @@ locals {
         law_resource_id = var.law_resource_id
       }
     },
-    (local.unapproved_browser_signins_report_workbook_id[local.environment]) = {
-      display_name       = "Unapproved Browser Sign-ins Report"
-      template_file_path = "unapproved_browser_signins_report.json.tmpl"
+    (local.browser_mfa_gaps_report_workbook_id[local.environment]) = {
+      display_name       = "Browser MFA Gaps by Application Report"
+      template_file_path = "browser_mfa_gaps_report.json.tmpl"
       variables = {
         law_resource_id = var.law_resource_id
       }
