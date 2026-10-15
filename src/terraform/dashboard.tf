@@ -14,6 +14,11 @@ locals {
     "live" = "b50004f9-8aca-491d-aaca-ef5704474839"
   }
 
+  browser_mfa_gaps_report_workbook_id = {
+    "dev"  = "3f7c1b62-5d0e-4a8f-9c41-2b6e8d1a7f53",
+    "live" = "a91d4e07-6c3b-4f25-8e7a-0d5b2c9f1e84"
+  }
+
   workbooks = {
     (local.questionable_pim_report_workbook_id[local.environment]) = {
       display_name       = "Questionable PIM Assignments Report"
@@ -32,6 +37,13 @@ locals {
     (local.out_of_hours_activations_report_workbook_id[local.environment]) = {
       display_name       = "Out of Hours Activations Report"
       template_file_path = "out_of_hours_activations_report.json.tmpl"
+      variables = {
+        law_resource_id = var.law_resource_id
+      }
+    },
+    (local.browser_mfa_gaps_report_workbook_id[local.environment]) = {
+      display_name       = "Browser MFA Gaps by Application Report"
+      template_file_path = "browser_mfa_gaps_report.json.tmpl"
       variables = {
         law_resource_id = var.law_resource_id
       }
