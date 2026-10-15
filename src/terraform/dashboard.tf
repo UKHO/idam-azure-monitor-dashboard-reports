@@ -14,6 +14,11 @@ locals {
     "live" = "b50004f9-8aca-491d-aaca-ef5704474839"
   }
 
+  multi_ip_sessions_report_workbook_id = {
+    "dev"  = "d4e8a2c1-7b39-4f65-a0d2-8c1e5b9f3a76",
+    "live" = "58b3f9e0-1c4a-4d87-b6e2-0a7d9c3e1f95"
+  }
+
   workbooks = {
     (local.questionable_pim_report_workbook_id[local.environment]) = {
       display_name       = "Questionable PIM Assignments Report"
@@ -32,6 +37,13 @@ locals {
     (local.out_of_hours_activations_report_workbook_id[local.environment]) = {
       display_name       = "Out of Hours Activations Report"
       template_file_path = "out_of_hours_activations_report.json.tmpl"
+      variables = {
+        law_resource_id = var.law_resource_id
+      }
+    },
+    (local.multi_ip_sessions_report_workbook_id[local.environment]) = {
+      display_name       = "Multi-IP Sessions Report"
+      template_file_path = "multi_ip_sessions_report.json.tmpl"
       variables = {
         law_resource_id = var.law_resource_id
       }
