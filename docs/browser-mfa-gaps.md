@@ -4,7 +4,7 @@
 
 The Browser MFA Gaps by Application report is an Azure Monitor Workbook that shows which browsers are getting into your protected applications without MFA. It exists because an application was once reachable from a browser without MFA being required.
 
-You tick the applications that are meant to be protected by MFA. The report then lists each protected application and browser combination that has sign-ins without MFA, and lets you drill into the sign-ins behind it.
+You tick the applications that are meant to be protected by MFA. The report then lists each browser and browser version that has sign-ins without MFA to those applications, and lets you drill into the sign-ins behind it.
 
 Data is queried live using KQL against a Log Analytics Workspace — there is no separate database or ETL process to maintain. See [`writing-queries.md`](writing-queries.md) for general guidance on how these queries are structured.
 
@@ -16,8 +16,8 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/browser_mfa_gaps
 
 The dashboard has **Time Range**, **Protected Applications** and **Sign-ins Shown** parameters, driving three panels:
 
-- **Protected applications** — one row per application, which you can expand to see one row per browser family used for it. Each row shows sign-in count, sign-ins without MFA, the percentage without MFA, the number of MFA-less sign-ins where no Conditional Access policy applied and distinct users. Application rows list the browsers seen. Browser rows list the browser versions seen. Sorted by most sign-ins without MFA. Selecting an application row selects all of that application's sign-ins. Selecting a browser row narrows it to that browser.
-- **Sign-ins for the selected application and browser** — shown once a row is selected. Lists each sign-in (for all browsers if an application row was selected) with time, user, user type, application, resource, IP address, location, operating system, device compliance and trust, MFA status, authentication requirement and conditional access status. Selecting a row selects that sign-in.
+- **Browsers** — one row per browser family (for example `Chrome`), which you can expand to see one row per exact browser version (for example `Chrome 118.0.0`). Each row shows sign-in count, sign-ins without MFA, the percentage without MFA, the number of MFA-less sign-ins where no Conditional Access policy applied, distinct users and the applications used. Browser rows also show how many versions were seen. Applications are information only, not a grouping level. Sorted by most sign-ins without MFA. Selecting a browser row selects all of that browser's versions. Selecting a version row narrows it to that version.
+- **Sign-ins for the selected browser or version** — shown once a row is selected. Lists each sign-in with time, user, user type, application, resource, IP address, location, operating system, device compliance and trust, MFA status, authentication requirement and conditional access status. Only the ticked applications are included. Selecting a row selects that sign-in.
 - **Authentication and conditional access detail** — shown once a sign-in is selected. Shows the authentication steps and conditional access policies for that sign-in's correlation ID.
 
 The parameters work like this:
@@ -29,7 +29,7 @@ The parameters work like this:
 
 - `SigninLogs` (interactive sign-ins only), `ResultType == "0"` (successful sign-ins).
 - The application is `AppDisplayName`. An empty value is reported as `Unknown`. The resource accessed (`ResourceDisplayName`) is shown in the detail panel.
-- Browser comes from `DeviceDetail.browser`, which includes a version (for example `Chrome 118.0.0`). Rows are grouped by family name, which is the text before the first digit (`Chrome`). The versions seen are listed in the table. An empty value is reported as `Unknown`.
+- Browser comes from `DeviceDetail.browser`, which includes a version (for example `Chrome 118.0.0`). Rows are grouped by family name, which is the text before the first digit (`Chrome`), then by the full browser string. An empty value is reported as `Unknown`.
 - MFA status is worked out from `AuthenticationDetails`, in this order:
   1. `MFA completed` — a step result mentions `MFA completed`.
   2. `Strong credential` — FIDO2 security key, Windows Hello for Business or certificate-based authentication was used.
@@ -45,7 +45,7 @@ The parameters work like this:
 - ⚠️ The Protected Applications list only contains applications with a successful sign-in in the selected time range. An application with no sign-ins in the range cannot be ticked.
 - ⚠️ Your tick selection is not saved with the workbook. It resets to all applications each time the workbook is opened.
 - ⚠️ The MFA text matching relies on the wording Entra ID writes into `AuthenticationDetails`. Check the results on **dev** against known sign-ins, and adjust the matching if the wording differs.
-- ⚠️ Applications are grouped by display name. Two applications with the same display name are shown as one row.
+- ⚠️ Applications are shown in the **Applications** column and the Protected Applications list by display name. Two applications with the same display name are shown as one.
 - ⚠️ `SigninLogs` contains IP addresses and locations. Confirm who should have read access before sharing the workbook, as the existing reader access package covers `AuditLogs` and `AzureActivity` only.
 
 ## Rules
