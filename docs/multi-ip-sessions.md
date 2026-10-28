@@ -16,17 +16,22 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/multi_ip_session
 
 The dashboard has **Time Range**, **Minimum Distinct IPs** and **Sessions Shown** parameters, driving two panels:
 
-- **Sessions used from multiple IP addresses** — one row per user and session, showing the number of distinct IP addresses, countries and devices, the number of events, first and last seen times, and the IP addresses, countries, devices, applications and sign-in types involved. Sorted by most IP addresses, then most recent. Selecting a row selects that session.
-- **Sign-ins in the selected session** — shown once a session is selected. Lists every successful sign-in in the session in time order, with sign-in type, IP address, location, application, resource, device, browser, operating system, user agent, authentication requirement and conditional access status. Use it to see where and when the IP address changed.
+- **Sessions used from multiple IP addresses** — one row per user and session, showing the number of distinct IP addresses, countries and devices, the number of events, first and last seen times, and the IP addresses, countries, devices, applications and sign-in types involved. Sorted by most IP addresses, then most recent. Select an IP address, device or application cell to open its full list. Selecting a row selects that session.
+- **Sign-ins in the selected session** — shown once a session is selected. Lists every successful sign-in in the session in time order, with sign-in type, user, IP address, city and country, application, resource, device ID, browser, operating system, user agent, authentication requirement, conditional access status and correlation ID. Use it to see where and when the IP address changed.
 
-**Sessions Shown** can restrict the list to sessions seen in more than one country, which removes most of the benign cases.
+The parameters work like this:
+
+- **Time Range** offers 1, 3, 7 and 14 days, or a custom range. The default is 7 days.
+- **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more.
+- **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases.
 
 ## Data Source
 
 - `SigninLogs` (interactive) and `AADNonInteractiveUserSignInLogs` (non-interactive), combined with `union isfuzzy=true` so the report still works if one table is missing.
 - Successful sign-ins only (`ResultType == "0"`) where `UserId`, `SessionId` and `IPAddress` are all populated.
 - Sessions are grouped by `UserId`, `UserPrincipalName` and `SessionId`.
-- The time range comes from the **Time Range** parameter. The first version of this query used a fixed 7-day lookback.
+- Country comes from `LocationDetails.countryOrRegion` and device from `DeviceDetail.deviceId`. Empty values are not counted.
+- The time range comes from the **Time Range** parameter.
 - Requires the Entra ID `SignInLogs` and `NonInteractiveUserSignInLogs` diagnostic settings to forward to the workspace this workbook queries.
 
 ## How to read the results
@@ -37,7 +42,9 @@ The dashboard has **Time Range**, **Minimum Distinct IPs** and **Sessions Shown*
 
 ## Known Limitations
 
-- ⚠️ Non-interactive sign-in logs are very large. Long time ranges can be slow and costly to query, so the parameter offers 1, 3, 7 and 14 days.
+- ⚠️ Non-interactive sign-in logs are very large. Long time ranges can be slow and costly to query, so the parameter offers 1, 3, 7 and 14 days. A custom range is allowed, but use it with care.
+- ⚠️ The IP address, country, device and application lists show at most 20 values per session. The counts are still exact.
+- ⚠️ The sessions table shows at most 500 rows and the sign-ins table at most 1,000 rows.
 - ⚠️ Sessions without a `SessionId` are not covered.
 - ⚠️ Failed sign-ins are not included.
 - ⚠️ The report does not look at what the session did after sign-in. Use Microsoft 365 audit logs and Defender for Cloud Apps for that.
