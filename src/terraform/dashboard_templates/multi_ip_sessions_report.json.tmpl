@@ -1,0 +1,218 @@
+{
+  "version": "Notebook/1.0",
+  "name": "Multi-IP Sessions Report",
+  "items": [
+    {
+      "type": 9,
+      "name": "global-parameters",
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "e1a4c7b9-3d52-4e08-8b6f-9c0d2a7e5f41",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContextFromParameter": null,
+            "key": "e1a4c7b9-3d52-4e08-8b6f-9c0d2a7e5f41",
+            "value": {
+              "durationMs": 604800000
+            }
+          },
+          {
+            "id": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
+            "version": "KqlParameterItem/1.0",
+            "name": "MinIPs",
+            "label": "Minimum Distinct IPs",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"2\",\"label\":\"2 or more\",\"selected\":true},\r\n{\"value\":\"3\",\"label\":\"3 or more\"},\r\n{\"value\":\"5\",\"label\":\"5 or more\"},\r\n{\"value\":\"10\",\"label\":\"10 or more\"}\r\n]",
+            "key": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
+            "value": "2"
+          },
+          {
+            "id": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
+            "version": "KqlParameterItem/1.0",
+            "name": "CountryFilter",
+            "label": "Sessions Shown",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All sessions\",\"selected\":true},\r\n{\"value\":\"Multi\",\"label\":\"Only sessions seen in more than one country\"}\r\n]",
+            "key": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
+            "value": "All"
+          }
+        ],
+        "style": "pills"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      }
+    },
+    {
+      "type": 3,
+      "name": "grid-multi-ip-sessions",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Sessions used from multiple IP addresses (select a session to see its sign-ins)",
+        "query": "union isfuzzy=true\n    (SigninLogs\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(Country, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| project UserPrincipalName, SessionId, IPCount, CountryCount, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, Countries, Devices, Applications, SignInTypes, UserId\n| order by IPCount desc, LastSeen desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "IPCount",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "palette": "orange"
+              }
+            },
+            {
+              "columnMatch": "CountryCount",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "palette": "red"
+              }
+            },
+            {
+              "columnMatch": "IPAddresses",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "Devices",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "Applications",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ],
+          "rowLimit": 500,
+          "filter": true
+        },
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "SessionId",
+            "parameterName": "SelectedSessionId"
+          }
+        ],
+        "noDataMessage": "No sessions were used from multiple IP addresses in the selected time range.",
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 2,
+        "w": 24,
+        "h": 11
+      }
+    },
+    {
+      "type": 3,
+      "name": "grid-session-signins",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Sign-ins in the selected session",
+        "query": "union isfuzzy=true\n    (SigninLogs\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where SessionId == '{SelectedSessionId}'\n| project TimeGenerated, SignInType, UserPrincipalName, IPAddress, City = tostring(Location.city), Country = tostring(Location.countryOrRegion), AppDisplayName, ResourceDisplayName, DeviceId = tostring(Device.deviceId), Browser = tostring(Device.browser), OS = tostring(Device.operatingSystem), UserAgent, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated asc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "rowLimit": 1000,
+          "filter": true
+        },
+        "noDataMessage": "No sign-ins found for the selected session.",
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 11
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "SelectedSessionId",
+          "comparison": "isNotEqualTo",
+          "value": ""
+        }
+      ]
+    }
+  ],
+  "layout": {
+    "type": "grid"
+  },
+  "styleSettings": {
+    "background": "lighter"
+  },
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
