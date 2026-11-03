@@ -6,11 +6,13 @@ Use this page as a contents page: it gives a one-line summary of each report and
 
 ## Available Reports
 
-| Report | Status | Summary |
-|--------|--------|---------|
-| [Questionable PIM Assignments](questionable-pim-assignments.md) | Live | Visualises Privileged Identity Management (PIM) activations, permanent assignments, out-of-PIM assignments, and direct RBAC assignments, to help spot non-compliant or unusual privileged access changes. |
-| [Out-of-Hours Activations](out-of-hours-activations.md) | Live | Visualises Tier-0 role and privileged group PIM activations, flagging whether each activation happened inside or outside defined business hours. |
-| [FIDO2 Adoption](fido2-adoption.md) | Live | Visualises FIDO2 security key registration and removal activity over time, to track adoption and spot unexpected removals. |
+| Report                                                          | Status | Summary                                                                                                                                                                                                   |
+| --------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Questionable PIM Assignments](questionable-pim-assignments.md) | Live   | Visualises Privileged Identity Management (PIM) activations, permanent assignments, out-of-PIM assignments, and direct RBAC assignments, to help spot non-compliant or unusual privileged access changes. |
+| [Out-of-Hours Activations](out-of-hours-activations.md)         | Live   | Visualises Tier-0 role and privileged group PIM activations, flagging whether each activation happened inside or outside defined business hours.                                                          |
+| [FIDO2 Adoption](fido2-adoption.md)                             | Live   | Visualises FIDO2 security key registration and removal activity over time, to track adoption and spot unexpected removals.                                                                                |
+| [Multi-IP Sessions](multi-ip-sessions.md)                       | Live   | Finds Entra ID sessions used from more than one IP address, as a lead for session hijacking (for example AiTM phishing) after MFA has succeeded.                                                          |
+| [Browser MFA Gaps by Application](browser-mfa-gaps.md) | Live | For a chosen set of protected applications, shows which browsers are signing in without MFA, to find applications reachable without MFA. |
 
 ## Environments
 
