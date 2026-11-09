@@ -24,6 +24,19 @@ locals {
     "live" = "a91d4e07-6c3b-4f25-8e7a-0d5b2c9f1e84"
   }
 
+  # IP addresses / patterns considered trusted in the Multi-IP Sessions report.
+  # Not visible or editable in the workbook; change via PR only.
+  # Supports exact IPs ("203.0.113.10") and "*" wildcards ("128.*", "10.20.*.*", "2001:db8:*").
+  multi_ip_sessions_ip_allowlist = []
+
+  # Compiled to an anchored, case-insensitive regex for KQL `matches regex`.
+  # "." is escaped as "[.]" so no backslashes need escaping in the JSON template.
+  # An empty list compiles to "^$", which never matches a populated IPAddress.
+  multi_ip_sessions_ip_allowlist_regex = length(local.multi_ip_sessions_ip_allowlist) == 0 ? "^$" : format(
+    "(?i)^(%s)$",
+    join("|", [for pattern in local.multi_ip_sessions_ip_allowlist : replace(replace(pattern, ".", "[.]"), "*", ".*")])
+  )
+
   workbooks = {
     (local.questionable_pim_report_workbook_id[local.environment]) = {
       display_name       = "Questionable PIM Assignments Report"
@@ -50,7 +63,8 @@ locals {
       display_name       = "Multi-IP Sessions Report"
       template_file_path = "multi_ip_sessions_report.json.tmpl"
       variables = {
-        law_resource_id = var.law_resource_id
+        law_resource_id    = var.law_resource_id
+        ip_allowlist_regex = local.multi_ip_sessions_ip_allowlist_regex
       }
     },
     (local.browser_mfa_gaps_report_workbook_id[local.environment]) = {
@@ -72,4 +86,14 @@ resource "azurerm_application_insights_workbook" "this" {
   display_name        = local.environment == "live" ? each.value.display_name : "${each.value.display_name} (${local.environment})"
   data_json           = templatefile("${path.module}/dashboard_templates/${each.value.template_file_path}", each.value.variables)
   tags                = local.tags
+
+  lifecycle {
+    precondition {
+      condition = alltrue([
+        for pattern in local.multi_ip_sessions_ip_allowlist :
+        can(regex("^[0-9A-Fa-f:.*]+$", pattern)) && can(regex("[0-9A-Fa-f]", pattern))
+      ])
+      error_message = "Each multi_ip_sessions_ip_allowlist entry must be an IPv4/IPv6 address or pattern using only hex digits, '.', ':' and '*' (e.g. \"128.*\"), and must contain at least one digit."
+    }
+  }
 }

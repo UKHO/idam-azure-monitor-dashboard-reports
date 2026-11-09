@@ -14,7 +14,7 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/multi_ip_session
 
 ## What can you search for?
 
-The dashboard has **Time Range**, **Minimum Distinct IPs**, **Sessions Shown**, **Non-GB Only** and **Email Domains** parameters, driving four panels:
+The dashboard has **Time Range**, **Minimum Distinct IPs**, **Sessions Shown**, **Non-GB Only**, **Hide Allowlisted IPs** and **Email Domains** parameters, driving four panels:
 
 - **Successful sign-ins by country** — pie chart of every successful sign-in in the time range, by country. Countries are shown by name with their code, for example `Germany (DE)`.
 - **Successful sign-ins by IP address (top 20)** — pie chart, next to the country chart, of the 20 IP addresses with the most successful sign-ins, each labelled with its country code.
@@ -29,7 +29,23 @@ The parameters work like this:
 - **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more.
 - **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases.
 - **Non-GB Only** defaults to **No**. When set to **Yes**, the pie charts only count sign-ins from outside GB (sign-ins with no country are excluded), and the sessions table only lists sessions with at least one sign-in from outside GB. The sign-ins table still shows every sign-in in the selected session, including GB ones, so you can see the full picture.
+- **Hide Allowlisted IPs** defaults to **No**. When set to **Yes**, sign-ins from allowlisted IP addresses are left out of the pie charts, and sessions where *every* IP address is allowlisted are hidden from the sessions table. A session that mixes an allowlisted IP address with any other IP address is still shown, because a trusted IP address followed by an unknown one is exactly the session-hijack pattern this report looks for. The sessions table always shows an **AllowlistedIPCount** column, and the sign-ins table always shows an **Allowlisted** column, whatever this parameter is set to.
 - **Email Domains** lists every email domain that signed in during the time range, with the number of users for each. It defaults to **All**. Select one or more domains to limit the pie charts and the sessions table to those users, for example to separate company staff from customers. For guest accounts (user principal names containing `#EXT#`, such as `jane_contoso.com#EXT#@tenant.onmicrosoft.com`), the domain is taken from the guest's own email address (`contoso.com`), not the tenant domain.
+
+## IP allowlist
+
+The allowlist is held in Terraform, in the `multi_ip_sessions_ip_allowlist` local in [`src/terraform/dashboard.tf`](../src/terraform/dashboard.tf). It is built into the workbook at deploy time, so report users cannot see or change it in the portal. To change it, raise a pull request.
+
+Each entry is either an exact IP address or a pattern using `*` as a wildcard:
+
+| Entry | Matches |
+| --- | --- |
+| `203.0.113.10` | That IP address only (not `203.0.113.100`) |
+| `128.*` | Any IPv4 address starting `128.` |
+| `10.20.*.*` | Any IPv4 address starting `10.20.` |
+| `2001:db8:*` | Any IPv6 address starting `2001:db8:` (case-insensitive) |
+
+CIDR notation (for example `10.0.0.0/8`) is not supported. Use wildcards instead. Terraform rejects entries containing anything other than hex digits, `.`, `:` and `*`, and rejects an entry of `*` on its own.
 
 ## Data Source
 
