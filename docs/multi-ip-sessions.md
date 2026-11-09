@@ -36,16 +36,24 @@ The parameters work like this:
 
 The allowlist is held in Terraform, in the `multi_ip_sessions_ip_allowlist` local in [`src/terraform/dashboard.tf`](../src/terraform/dashboard.tf). It is built into the workbook at deploy time, so report users cannot see or change it in the portal. To change it, raise a pull request.
 
-Each entry is either an exact IP address or a pattern using `*` as a wildcard:
+Each entry is a single IP address, a CIDR range or a pattern using `*` as a wildcard. Add the friendly name as a trailing comment:
+
+````hcl
+multi_ip_sessions_ip_allowlist = [
+  "62.172.108.0/27", # UKHO Internal IPs
+  "51.141.5.62",     # UKHO FortiWeb
+]
+````
 
 | Entry | Matches |
 | --- | --- |
-| `203.0.113.10` | That IP address only (not `203.0.113.100`) |
+| `51.141.5.62` or `51.141.5.62/32` | That IP address only |
+| `62.172.108.0/27` | `62.172.108.0` to `62.172.108.31` |
+| `2001:db8::/32` | That IPv6 range |
 | `128.*` | Any IPv4 address starting `128.` |
 | `10.20.*.*` | Any IPv4 address starting `10.20.` |
-| `2001:db8:*` | Any IPv6 address starting `2001:db8:` (case-insensitive) |
 
-CIDR notation (for example `10.0.0.0/8`) is not supported. Use wildcards instead. Terraform rejects entries containing anything other than hex digits, `.`, `:` and `*`, and rejects an entry of `*` on its own.
+Terraform checks every entry at plan time and fails the plan if any entry is not a valid IP address, CIDR range or wildcard pattern. An entry of `*` on its own is rejected.
 
 ## Data Source
 

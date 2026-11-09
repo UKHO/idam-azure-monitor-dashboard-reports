@@ -24,17 +24,53 @@ locals {
     "live" = "a91d4e07-6c3b-4f25-8e7a-0d5b2c9f1e84"
   }
 
-  # IP addresses / patterns considered trusted in the Multi-IP Sessions report.
+  # IP addresses considered trusted in the Multi-IP Sessions report.
   # Not visible or editable in the workbook; change via PR only.
-  # Supports exact IPs ("203.0.113.10") and "*" wildcards ("128.*", "10.20.*.*", "2001:db8:*").
-  multi_ip_sessions_ip_allowlist = []
+  # Each entry can be:
+  #   - a single IP                 "51.141.5.62"
+  #   - a CIDR range                "62.172.108.0/27"
+  #   - a "*" wildcard pattern      "128.*", "10.20.*.*", "2001:db8:*"
+  # Put the friendly name in a trailing comment.
+  multi_ip_sessions_ip_allowlist = [
+    "59.160.23.25",     # Mastek – India/Pune/Tata Comms Limited
+    "62.172.108.0/27",  # UKHO Internal IPs
+    "51.141.5.62",      # UKHO FortiWeb
+    "210.18.83.151/32", # Mastek – India/Mumbai/Sify Limited
+    "81.145.145.150/32" # Mastek - UK/Reading/BT
+  ]
 
-  # Compiled to an anchored, case-insensitive regex for KQL `matches regex`.
-  # "." is escaped as "[.]" so no backslashes need escaping in the JSON template.
-  # An empty list compiles to "^$", which never matches a populated IPAddress.
-  multi_ip_sessions_ip_allowlist_regex = length(local.multi_ip_sessions_ip_allowlist) == 0 ? "^$" : format(
-    "(?i)^(%s)$",
-    join("|", [for pattern in local.multi_ip_sessions_ip_allowlist : replace(replace(pattern, ".", "[.]"), "*", ".*")])
+  # Wildcard entries are matched with a regex; everything else is treated as CIDR
+  # (single IPs become /32 for IPv4 or /128 for IPv6).
+  multi_ip_sessions_ip_allowlist_wildcards = [for entry in local.multi_ip_sessions_ip_allowlist : trimspace(entry) if strcontains(entry, "*")]
+  multi_ip_sessions_ip_allowlist_cidrs = [
+    for entry in local.multi_ip_sessions_ip_allowlist :
+    strcontains(entry, "/") ? trimspace(entry) : (strcontains(entry, ":") ? "${trimspace(entry)}/128" : "${trimspace(entry)}/32")
+    if !strcontains(entry, "*")
+  ]
+  multi_ip_sessions_ip_allowlist_ipv4_cidrs = [for cidr in local.multi_ip_sessions_ip_allowlist_cidrs : cidr if !strcontains(cidr, ":")]
+  multi_ip_sessions_ip_allowlist_ipv6_cidrs = [for cidr in local.multi_ip_sessions_ip_allowlist_cidrs : cidr if strcontains(cidr, ":")]
+
+  # Compiled into a single KQL boolean expression over the IPAddress column.
+  # Single quotes and "[.]" are used so nothing needs escaping inside the JSON template.
+  # coalesce() guards against null when an IPv4 function sees an IPv6 address (and vice versa).
+  # An empty allowlist compiles to "false".
+  multi_ip_sessions_ip_allowlist_conditions = compact([
+    length(local.multi_ip_sessions_ip_allowlist_ipv4_cidrs) == 0 ? "" : format(
+      "coalesce(ipv4_is_in_any_range(IPAddress, dynamic([%s])), false)",
+      join(", ", [for cidr in local.multi_ip_sessions_ip_allowlist_ipv4_cidrs : "'${cidr}'"])
+    ),
+    length(local.multi_ip_sessions_ip_allowlist_ipv6_cidrs) == 0 ? "" : format(
+      "coalesce(ipv6_is_in_any_range(IPAddress, dynamic([%s])), false)",
+      join(", ", [for cidr in local.multi_ip_sessions_ip_allowlist_ipv6_cidrs : "'${cidr}'"])
+    ),
+    length(local.multi_ip_sessions_ip_allowlist_wildcards) == 0 ? "" : format(
+      "(IPAddress matches regex @'(?i)^(%s)$')",
+      join("|", [for pattern in local.multi_ip_sessions_ip_allowlist_wildcards : replace(replace(pattern, ".", "[.]"), "*", ".*")])
+    )
+  ])
+  multi_ip_sessions_ip_allowlist_condition = length(local.multi_ip_sessions_ip_allowlist_conditions) == 0 ? "false" : format(
+    "(%s)",
+    join(" or ", local.multi_ip_sessions_ip_allowlist_conditions)
   )
 
   workbooks = {
@@ -63,8 +99,8 @@ locals {
       display_name       = "Multi-IP Sessions Report"
       template_file_path = "multi_ip_sessions_report.json.tmpl"
       variables = {
-        law_resource_id    = var.law_resource_id
-        ip_allowlist_regex = local.multi_ip_sessions_ip_allowlist_regex
+        law_resource_id        = var.law_resource_id
+        ip_allowlist_condition = local.multi_ip_sessions_ip_allowlist_condition
       }
     },
     (local.browser_mfa_gaps_report_workbook_id[local.environment]) = {
@@ -89,11 +125,11 @@ resource "azurerm_application_insights_workbook" "this" {
 
   lifecycle {
     precondition {
-      condition = alltrue([
-        for pattern in local.multi_ip_sessions_ip_allowlist :
-        can(regex("^[0-9A-Fa-f:.*]+$", pattern)) && can(regex("[0-9A-Fa-f]", pattern))
-      ])
-      error_message = "Each multi_ip_sessions_ip_allowlist entry must be an IPv4/IPv6 address or pattern using only hex digits, '.', ':' and '*' (e.g. \"128.*\"), and must contain at least one digit."
+      condition = alltrue(concat(
+        [for pattern in local.multi_ip_sessions_ip_allowlist_wildcards : can(regex("^[0-9A-Fa-f:.*]+$", pattern)) && can(regex("[0-9A-Fa-f]", pattern))],
+        [for cidr in local.multi_ip_sessions_ip_allowlist_cidrs : can(cidrhost(cidr, 0))]
+      ))
+      error_message = "Each multi_ip_sessions_ip_allowlist entry must be a valid IP address (\"51.141.5.62\"), CIDR range (\"62.172.108.0/27\") or wildcard pattern using only hex digits, '.', ':' and '*' (\"128.*\"). A lone \"*\" is not allowed."
     }
   }
 }
