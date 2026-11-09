@@ -14,7 +14,7 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/multi_ip_session
 
 ## What can you search for?
 
-The dashboard has **Time Range**, **Minimum Distinct IPs**, **Sessions Shown** and **Non-GB Only** parameters, driving four panels:
+The dashboard has **Time Range**, **Minimum Distinct IPs**, **Sessions Shown**, **Non-GB Only** and **Email Domains** parameters, driving four panels:
 
 - **Successful sign-ins by country** — pie chart of every successful sign-in in the time range, by country. Countries are shown by name with their code, for example `Germany (DE)`.
 - **Successful sign-ins by IP address (top 20)** — pie chart, next to the country chart, of the 20 IP addresses with the most successful sign-ins, each labelled with its country code.
@@ -29,6 +29,7 @@ The parameters work like this:
 - **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more.
 - **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases.
 - **Non-GB Only** defaults to **No**. When set to **Yes**, the pie charts only count sign-ins from outside GB (sign-ins with no country are excluded), and the sessions table only lists sessions with at least one sign-in from outside GB. The sign-ins table still shows every sign-in in the selected session, including GB ones, so you can see the full picture.
+- **Email Domains** lists every email domain that signed in during the time range, with the number of users for each. It defaults to **All**. Select one or more domains to limit the pie charts and the sessions table to those users, for example to separate company staff from customers. For guest accounts (user principal names containing `#EXT#`, such as `jane_contoso.com#EXT#@tenant.onmicrosoft.com`), the domain is taken from the guest's own email address (`contoso.com`), not the tenant domain.
 
 ## Data Source
 
@@ -54,6 +55,7 @@ The parameters work like this:
 - ⚠️ Sessions without a `SessionId` are not covered.
 - ⚠️ Country names come from a separate IP geolocation database, so very occasionally the name may not match the Entra ID country code (for example, an IP near a border). If no name is found, only the code is shown. The code is always what Entra ID recorded.
 - ⚠️ The IP address pie chart shows the top 20 IP addresses only.
+- ⚠️ The **Email Domains** list is built by querying both sign-in tables over the selected time range, which adds to load time on long ranges.
 - ⚠️ Failed sign-ins are not included.
 - ⚠️ The report does not look at what the session did after sign-in. Use Microsoft 365 audit logs and Defender for Cloud Apps for that.
 - ⚠️ `SigninLogs` and the non-interactive logs contain IP addresses and locations. Confirm who should have read access before sharing the workbook, as the existing reader access package covers `AuditLogs` and `AzureActivity` only.
