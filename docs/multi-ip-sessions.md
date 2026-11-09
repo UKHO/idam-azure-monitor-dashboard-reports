@@ -14,16 +14,21 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/multi_ip_session
 
 ## What can you search for?
 
-The dashboard has **Time Range**, **Minimum Distinct IPs** and **Sessions Shown** parameters, driving two panels:
+The dashboard has **Time Range**, **Minimum Distinct IPs**, **Sessions Shown** and **Non-GB Only** parameters, driving four panels:
 
-- **Sessions used from multiple IP addresses** — one row per user and session, showing the number of distinct IP addresses, countries and devices, the number of events, first and last seen times, and the IP addresses, countries, devices, applications and sign-in types involved. Sorted by most IP addresses, then most recent. Select an IP address, device or application cell to open its full list. Selecting a row selects that session.
-- **Sign-ins in the selected session** — shown once a session is selected. Lists every successful sign-in in the session in time order, with sign-in type, user, IP address, city and country, application, resource, device ID, browser, operating system, user agent, authentication requirement, conditional access status and correlation ID. Use it to see where and when the IP address changed.
+- **Successful sign-ins by country** — pie chart of every successful sign-in in the time range, by country. Countries are shown by name with their code, for example `Germany (DE)`.
+- **Successful sign-ins by IP address (top 20)** — pie chart, next to the country chart, of the 20 IP addresses with the most successful sign-ins, each labelled with its country code.
+- **Sessions used from multiple IP addresses** — one row per user and session, showing the number of distinct IP addresses, countries and devices, the number of events, first and last seen times, and the IP addresses, countries (by name and code), devices, applications and sign-in types involved. Sorted by most IP addresses, then most recent. Select an IP address, device or application cell to open its full list. Selecting a row selects that session.
+- **Sign-ins in the selected session** — shown once a session is selected. Lists every successful sign-in in the session in time order, with sign-in type, user, IP address, city, country code and country name, application, resource, device ID, browser, operating system, user agent, authentication requirement, conditional access status and correlation ID. Use it to see where and when the IP address changed.
+
+The pie charts cover all successful sign-ins, not only multi-IP sessions, so **Minimum Distinct IPs** and **Sessions Shown** do not affect them.
 
 The parameters work like this:
 
 - **Time Range** offers 1, 3, 7 and 14 days, or a custom range. The default is 7 days.
 - **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more.
 - **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases.
+- **Non-GB Only** defaults to **No**. When set to **Yes**, the pie charts only count sign-ins from outside GB (sign-ins with no country are excluded), and the sessions table only lists sessions with at least one sign-in from outside GB. The sign-ins table still shows every sign-in in the selected session, including GB ones, so you can see the full picture.
 
 ## Data Source
 
@@ -31,6 +36,7 @@ The parameters work like this:
 - Successful sign-ins only (`ResultType == "0"`) where `UserId`, `SessionId` and `IPAddress` are all populated.
 - Sessions are grouped by `UserId`, `UserPrincipalName` and `SessionId`.
 - Country comes from `LocationDetails.countryOrRegion` and device from `DeviceDetail.deviceId`. Empty values are not counted.
+- Country names are looked up from the IP address with the KQL `geo_info_from_ip_address()` function. The country code from Entra ID is still used for counting and filtering.
 - The time range comes from the **Time Range** parameter.
 - Requires the Entra ID `SignInLogs` and `NonInteractiveUserSignInLogs` diagnostic settings to forward to the workspace this workbook queries.
 
@@ -46,6 +52,8 @@ The parameters work like this:
 - ⚠️ The IP address, country, device and application lists show at most 20 values per session. The counts are still exact.
 - ⚠️ The sessions table shows at most 500 rows and the sign-ins table at most 1,000 rows.
 - ⚠️ Sessions without a `SessionId` are not covered.
+- ⚠️ Country names come from a separate IP geolocation database, so very occasionally the name may not match the Entra ID country code (for example, an IP near a border). If no name is found, only the code is shown. The code is always what Entra ID recorded.
+- ⚠️ The IP address pie chart shows the top 20 IP addresses only.
 - ⚠️ Failed sign-ins are not included.
 - ⚠️ The report does not look at what the session did after sign-in. Use Microsoft 365 audit logs and Defender for Cloud Apps for that.
 - ⚠️ `SigninLogs` and the non-interactive logs contain IP addresses and locations. Confirm who should have read access before sharing the workbook, as the existing reader access package covers `AuditLogs` and `AzureActivity` only.
