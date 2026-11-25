@@ -14,25 +14,42 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/multi_ip_session
 
 ## What can you search for?
 
-The dashboard has **Time Range**, **Sign-in Type**, **Non-GB Only**, **Hide Allowlisted IPs**, **Email Domains**, **Minimum Distinct IPs**, **Sessions Shown** and **Show Allowlist** parameters, driving four panels and an allowlist box:
+The dashboard has a **View** switch, which decides whether the report focuses on IP addresses, countries or both. It also has **Time Range**, **Sign-in Type**, **Non-GB Only**, **Hide Allowlisted IPs**, **Email Domains**, **Minimum Distinct IPs**, **Sessions Shown** and **Show Allowlist** parameters.
+
+### Views
+
+| | **Both** (default) | **IP Addresses** | **Countries** |
+| --- | --- | --- | --- |
+| Pie charts | By country and by IP address | By IP address | By country |
+| Sessions table sorted by | Most countries, then most IP addresses, then most recent | Most IP addresses, then most recent | Most countries, then most IP addresses, then most recent |
+| Extra parameters | **Minimum Distinct IPs** and **Sessions Shown** | **Minimum Distinct IPs** | **Sessions Shown** |
+
+- **IP Addresses** is the direct test for session hijacking: the session was used from more than one network, whatever the country. It catches attackers using an IP address in the same country, but it is noisy, because mobile networks, VPNs and IPv4/IPv6 switching all change IP addresses. Its sessions table leads with `IPCount`, `AllowlistedIPCount` and `IPAddresses`, and has no country columns.
+- **Countries** ranks sessions by how many countries they were used from, which cuts out most of the harmless cases. Its sessions table leads with `CountryCount` and `Countries`. It always lists every session used from 2 or more IP addresses, because **Minimum Distinct IPs** is not shown in this view.
+- **Both** shows everything, as the report did before views were added.
+
+### Panels
 
 - **Allowlisted IP addresses** — an information box listing every allowlisted IP address, CIDR range and wildcard pattern. Only shown when **Show Allowlist** is set to **Yes**.
-- **Successful sign-ins by country** — pie chart of every successful sign-in in the time range, by country. Countries are shown by name with their code, for example `Germany (DE)`.
-- **Successful sign-ins by IP address (top 20)** — pie chart, next to the country chart, of the 20 IP addresses with the most successful sign-ins, each labelled with its country code.
-- **Sessions used from multiple IP addresses** — one row per user and session, showing the number of distinct IP addresses, countries and devices, the number of events, first and last seen times, and the IP addresses, countries (by name and code), devices, applications and sign-in types involved. Sorted by most countries, then most IP addresses, then most recent. Select an IP address, device or application cell to open its full list. Selecting a row selects that session.
-- **Sign-ins in the selected session** — shown once a session is selected. Lists every successful sign-in in the session in time order, with sign-in type, user, IP address, city, country code and country name, application, resource, device ID, browser, operating system, user agent, authentication requirement, conditional access status and correlation ID. Use it to see where and when the IP address changed.
+- **Successful sign-ins by country** — pie chart of every successful sign-in in the time range, by country. Countries are shown by name with their code, for example `Germany (DE)`. Shown in the **Both** and **Countries** views.
+- **Successful sign-ins by IP address (top 20)** — pie chart of the 20 IP addresses with the most successful sign-ins, each labelled with its country code. Shown in the **Both** and **IP Addresses** views.
+- **Sessions used from multiple IP addresses** — one row per user and session, showing the counts, first and last seen times, and the IP addresses, devices, applications and sign-in types involved. The country columns are included in the **Both** and **Countries** views. The column order and sort order depend on the view (see above). Select an IP address, device or application cell to open its full list. Selecting a row selects that session.
+- **Sign-ins in the selected session** — shown once a session is selected, in every view. Lists every successful sign-in in the session in time order, with sign-in type, user, IP address, city, country code and country name, application, resource, device ID, browser, operating system, user agent, authentication requirement, conditional access status and correlation ID. Use it to see where and when the IP address changed.
 
 The pie charts cover all successful sign-ins, not only multi-IP sessions, so **Minimum Distinct IPs** and **Sessions Shown** do not affect them.
 
+### Parameters
+
 The parameters work like this:
 
+- **View** chooses **Both** (the default), **IP Addresses** or **Countries**. See [Views](#views).
 - **Time Range** offers 1, 3, 7 and 14 days, or a custom range. The default is 7 days.
 - **Sign-in Type** limits every panel to interactive sign-ins (`SigninLogs`), non-interactive sign-ins (`AADNonInteractiveUserSignInLogs`) or both (the default).
 - **Non-GB Only** defaults to **No**. When set to **Yes**, the pie charts only count sign-ins from outside GB (sign-ins with no country are excluded), the sessions table only lists sessions with at least one sign-in from outside GB, and the sign-ins table only shows that session's sign-ins from outside GB.
 - **Hide Allowlisted IPs** defaults to **No**. When set to **Yes**, sign-ins from allowlisted IP addresses are left out of the pie charts, and sessions where *every* IP address is allowlisted are hidden from the sessions table. A session that mixes an allowlisted IP address with any other IP address is still shown, because a trusted IP address followed by an unknown one is exactly the session-hijack pattern this report looks for. The sessions table always shows an **AllowlistedIPCount** column, and the sign-ins table always shows an **Allowlisted** column, whatever this parameter is set to.
 - **Email Domains** lists every email domain that signed in during the time range, with the number of users for each. It defaults to **All**. Select one or more domains to limit the pie charts and the sessions table to those users, for example to separate company staff from customers. For guest accounts (user principal names containing `#EXT#`, such as `jane_contoso.com#EXT#@tenant.onmicrosoft.com`), the domain is taken from the guest's own email address (`contoso.com`), not the tenant domain.
-- **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more.
-- **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases.
+- **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more. Shown in the **Both** and **IP Addresses** views.
+- **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases. Shown in the **Both** and **Countries** views.
 - **Show Allowlist** defaults to **No**. When set to **Yes**, it shows the list of allowlisted IP addresses.
 
 ## IP allowlist
@@ -84,6 +101,7 @@ Terraform checks every entry at plan time and fails the plan if any entry is not
 - ⚠️ The IP address pie chart shows the top 20 IP addresses only.
 - ⚠️ The **Email Domains** list is built by querying both sign-in tables over the selected time range, which adds to load time on long ranges.
 - ⚠️ Failed sign-ins are not included.
+- ⚠️ Each view has its own copy of the sessions query in the template, so a change to the sessions logic must be made in all three (`grid-multi-ip-sessions-both`, `-ip` and `-country`).
 - ⚠️ The report does not look at what the session did after sign-in. Use Microsoft 365 audit logs and Defender for Cloud Apps for that.
 - ⚠️ `SigninLogs` and the non-interactive logs contain IP addresses and locations. Confirm who should have read access before sharing the workbook, as the existing reader access package covers `AuditLogs` and `AzureActivity` only.
 

@@ -41,6 +41,18 @@
             }
           },
           {
+            "id": "6e2c9a47-1f5b-4d83-a7c6-0b9e3f5d2a18",
+            "version": "KqlParameterItem/1.0",
+            "name": "View",
+            "label": "View",
+            "type": 10,
+            "isRequired": true,
+            "isHiddenWhenLocked": false,
+            "jsonData": "[\r\n{\"value\":\"Both\",\"label\":\"Both\",\"selected\":true},\r\n{\"value\":\"IP\",\"label\":\"IP Addresses\"},\r\n{\"value\":\"Country\",\"label\":\"Countries\"}\r\n]",
+            "key": "6e2c9a47-1f5b-4d83-a7c6-0b9e3f5d2a18",
+            "value": "Both"
+          },
+          {
             "id": "a3d9f6c2-8e14-4b7a-9f05-6c2e1d8b4a97",
             "version": "KqlParameterItem/1.0",
             "name": "SignInTypeFilter",
@@ -123,40 +135,6 @@
             ]
           },
           {
-            "id": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
-            "version": "KqlParameterItem/1.0",
-            "name": "MinIPs",
-            "label": "Minimum Distinct IPs",
-            "type": 2,
-            "isRequired": true,
-            "multiSelect": false,
-            "isHiddenWhenLocked": false,
-            "typeSettings": {
-              "additionalResourceOptions": [],
-              "showDefault": false
-            },
-            "jsonData": "[\r\n{\"value\":\"2\",\"label\":\"2 or more\",\"selected\":true},\r\n{\"value\":\"3\",\"label\":\"3 or more\"},\r\n{\"value\":\"5\",\"label\":\"5 or more\"},\r\n{\"value\":\"10\",\"label\":\"10 or more\"}\r\n]",
-            "key": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
-            "value": "2"
-          },
-          {
-            "id": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
-            "version": "KqlParameterItem/1.0",
-            "name": "CountryFilter",
-            "label": "Sessions Shown",
-            "type": 2,
-            "isRequired": true,
-            "multiSelect": false,
-            "isHiddenWhenLocked": false,
-            "typeSettings": {
-              "additionalResourceOptions": [],
-              "showDefault": false
-            },
-            "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All sessions\",\"selected\":true},\r\n{\"value\":\"Multi\",\"label\":\"Only sessions seen in more than one country\"}\r\n]",
-            "key": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
-            "value": "All"
-          },
-          {
             "id": "f0b7c3e9-2a6d-4c18-b5e4-8d1a9f2c7e60",
             "version": "KqlParameterItem/1.0",
             "name": "ShowAllowlist",
@@ -181,6 +159,90 @@
       }
     },
     {
+      "type": 9,
+      "name": "ip-view-parameters",
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
+            "version": "KqlParameterItem/1.0",
+            "name": "MinIPs",
+            "label": "Minimum Distinct IPs",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"2\",\"label\":\"2 or more\",\"selected\":true},\r\n{\"value\":\"3\",\"label\":\"3 or more\"},\r\n{\"value\":\"5\",\"label\":\"5 or more\"},\r\n{\"value\":\"10\",\"label\":\"10 or more\"}\r\n]",
+            "key": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
+            "value": "2"
+          }
+        ],
+        "style": "pills"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 3,
+        "w": 12,
+        "h": 2
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "View",
+          "comparison": "isNotEqualTo",
+          "value": "Country"
+        }
+      ]
+    },
+    {
+      "type": 9,
+      "name": "country-view-parameters",
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
+            "version": "KqlParameterItem/1.0",
+            "name": "CountryFilter",
+            "label": "Sessions Shown",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All sessions\",\"selected\":true},\r\n{\"value\":\"Multi\",\"label\":\"Only sessions seen in more than one country\"}\r\n]",
+            "key": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
+            "value": "All"
+          }
+        ],
+        "style": "pills"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 12,
+        "y": 3,
+        "w": 12,
+        "h": 2
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "View",
+          "comparison": "isNotEqualTo",
+          "value": "IP"
+        }
+      ]
+    },
+    {
       "type": 1,
       "name": "info-ip-allowlist",
       "content": {
@@ -191,7 +253,7 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 3,
+        "y": 5,
         "w": 24,
         "h": 4
       },
@@ -225,10 +287,17 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 7,
+        "y": 9,
         "w": 12,
         "h": 9
-      }
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "View",
+          "comparison": "isNotEqualTo",
+          "value": "IP"
+        }
+      ]
     },
     {
       "type": 3,
@@ -252,14 +321,21 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 12,
-        "y": 7,
+        "y": 9,
         "w": 12,
         "h": 9
-      }
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "View",
+          "comparison": "isNotEqualTo",
+          "value": "Country"
+        }
+      ]
     },
     {
       "type": 3,
-      "name": "grid-multi-ip-sessions",
+      "name": "grid-multi-ip-sessions-both",
       "content": {
         "version": "KqlItem/1.0",
         "title": "Sessions used from multiple IP addresses (select a session to see its sign-ins)",
@@ -344,10 +420,199 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 16,
+        "y": 18,
         "w": 24,
         "h": 11
-      }
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "View",
+          "comparison": "isEqualTo",
+          "value": "Both"
+        }
+      ]
+    },
+    {
+      "type": 3,
+      "name": "grid-multi-ip-sessions-ip",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Sessions used from multiple IP addresses (select a session to see its sign-ins)",
+        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nSignIns\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    AllowlistedIPCount = dcountif(IPAddress, IsAllowlisted),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB'),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= {MinIPs}\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserPrincipalName, SessionId, IPCount, AllowlistedIPCount, IPAddresses, DeviceCount, EventCount, FirstSeen, LastSeen, Devices, Applications, SignInTypes, UserId\n| order by IPCount desc, LastSeen desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "IPCount",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "palette": "orange"
+              }
+            },
+            {
+              "columnMatch": "IPAddresses",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "Devices",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "Applications",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ],
+          "rowLimit": 500,
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "IPCount",
+              "sortOrder": 2
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "IPCount",
+            "sortOrder": 2
+          }
+        ],
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "SessionId",
+            "parameterName": "SelectedSessionId"
+          }
+        ],
+        "noDataMessage": "No sessions were used from multiple IP addresses in the selected time range.",
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 18,
+        "w": 24,
+        "h": 11
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "View",
+          "comparison": "isEqualTo",
+          "value": "IP"
+        }
+      ]
+    },
+    {
+      "type": 3,
+      "name": "grid-multi-ip-sessions-country",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Sessions used from multiple IP addresses, by country (select a session to see its sign-ins)",
+        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet CountryNames = SignIns\n| where isnotempty(Country)\n| summarize by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country;\nSignIns\n| lookup kind=leftouter CountryNames on Country\n| extend CountryLabel = iff(isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB'),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(CountryLabel, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= 2\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserPrincipalName, SessionId, CountryCount, Countries, IPCount, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, Devices, Applications, SignInTypes, UserId\n| order by CountryCount desc, IPCount desc, LastSeen desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "${law_resource_id}"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "CountryCount",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "palette": "red"
+              }
+            },
+            {
+              "columnMatch": "IPAddresses",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "Devices",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "Applications",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            }
+          ],
+          "rowLimit": 500,
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "CountryCount",
+              "sortOrder": 2
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "CountryCount",
+            "sortOrder": 2
+          }
+        ],
+        "exportedParameters": [
+          {
+            "parameterType": 1,
+            "fieldName": "SessionId",
+            "parameterName": "SelectedSessionId"
+          }
+        ],
+        "noDataMessage": "No sessions were used from multiple IP addresses in the selected time range.",
+        "showViewButton": false
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 18,
+        "w": 24,
+        "h": 11
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "View",
+          "comparison": "isEqualTo",
+          "value": "Country"
+        }
+      ]
     },
     {
       "type": 3,
@@ -375,7 +640,7 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 27,
+        "y": 29,
         "w": 24,
         "h": 11
       },
