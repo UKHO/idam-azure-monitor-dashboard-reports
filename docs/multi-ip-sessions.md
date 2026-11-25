@@ -47,7 +47,7 @@ Merging works on whole sessions. A user who signs in from home in one session an
 The parameters work like this:
 
 - **View** chooses **Both** (the default), **IP Addresses** or **Countries**. See [Views](#views).
-- **Time Range** offers 1, 3, 7 and 14 days, or a custom range. The default is 7 days.
+- **Time Range** offers 1, 3, 7, 14, 30 and 60 days, or a custom range. The default is 7 days.
 - **Sign-in Type** limits every panel to interactive sign-ins (`SigninLogs`), non-interactive sign-ins (`AADNonInteractiveUserSignInLogs`) or both (the default).
 - **Non-GB Only** defaults to **No**. When set to **Yes**, the pie charts only count sign-ins from outside GB (sign-ins with no country are excluded), the users table only includes sessions with at least one sign-in from outside GB, and the sign-ins table only shows sign-ins from outside GB.
 - **Hide Allowlisted IPs** defaults to **No**. When set to **Yes**, sign-ins from allowlisted IP addresses are left out of the pie charts, and sessions where *every* IP address is allowlisted are left out of the users table. A session that mixes an allowlisted IP address with any other IP address is still included, because a trusted IP address followed by an unknown one is exactly the session-hijack pattern this report looks for. The users table shows an **AllowlistedIPCount** column in the **Both** and **IP Addresses** views, and the sign-ins table always shows an **Allowlisted** column, whatever this parameter is set to.
@@ -97,7 +97,7 @@ Terraform checks every entry at plan time and fails the plan if any entry is not
 
 ## Known Limitations
 
-- ⚠️ Non-interactive sign-in logs are very large. Long time ranges can be slow and costly to query, so the parameter offers 1, 3, 7 and 14 days. A custom range is allowed, but use it with care.
+- ⚠️ Non-interactive sign-in logs are very large. Long time ranges can be slow and costly to query. The 30 and 60 day options, and long custom ranges, may time out or hit query limits; if so, narrow **Sign-in Type** or **Email Domains**, or use a shorter range. Check the workspace's retention too: data older than the retention period is not returned.
 - ⚠️ The IP address, country, device and application lists show at most 20 values per user, and the session ID list at most 100. The counts are still exact. If a user has more than 100 matching sessions, the sign-ins table only covers the first 100.
 - ⚠️ The users table shows at most 500 rows and the sign-ins table at most 1,000 rows.
 - ⚠️ Sessions without a `SessionId` are not covered.
