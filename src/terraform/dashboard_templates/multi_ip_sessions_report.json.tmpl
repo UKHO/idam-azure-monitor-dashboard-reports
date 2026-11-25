@@ -274,8 +274,8 @@
       "name": "grid-multi-ip-sessions-both",
       "content": {
         "version": "KqlItem/1.0",
-        "title": "Sessions used from multiple IP addresses (select a session to see its sign-ins)",
-        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet CountryNames = SignIns\n| where isnotempty(Country)\n| summarize by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country;\nSignIns\n| lookup kind=leftouter CountryNames on Country\n| extend CountryLabel = iff(isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    AllowlistedIPCount = dcountif(IPAddress, IsAllowlisted),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB'),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(CountryLabel, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserPrincipalName, SessionId, IPCount, AllowlistedIPCount, CountryCount, Countries, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, Devices, Applications, SignInTypes, UserId\n| order by CountryCount desc, IPCount desc, LastSeen desc",
+        "title": "Users with sessions used from multiple IP addresses (select a user to see their sign-ins)",
+        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet MatchingSessions = SignIns\n| summarize\n    IPCount = dcount(IPAddress),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB')\n    by UserId, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserId, SessionId;\nlet CountryNames = SignIns\n| where isnotempty(Country)\n| summarize by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country;\nMatchingSessions\n| join kind=inner SignIns on UserId, SessionId\n| lookup kind=leftouter CountryNames on Country\n| extend CountryLabel = iff(isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    SessionCount = dcount(SessionId),\n    IPCount = dcount(IPAddress),\n    AllowlistedIPCount = dcountif(IPAddress, IsAllowlisted),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    SessionIds = make_set(SessionId, 100),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(CountryLabel, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName\n| extend SelectedSessionIds = strcat_array(SessionIds, ',')\n| project UserPrincipalName, SessionCount, IPCount, AllowlistedIPCount, CountryCount, Countries, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, SessionIds, Devices, Applications, SignInTypes, UserId, SelectedSessionIds\n| order by CountryCount desc, IPCount desc, LastSeen desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -325,6 +325,18 @@
                 "linkTarget": "CellDetails",
                 "linkIsContextBlade": true
               }
+            },
+            {
+              "columnMatch": "SessionIds",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "SelectedSessionIds",
+              "formatter": 5
             }
           ],
           "rowLimit": 500,
@@ -345,11 +357,11 @@
         "exportedParameters": [
           {
             "parameterType": 1,
-            "fieldName": "SessionId",
-            "parameterName": "SelectedSessionId"
+            "fieldName": "SelectedSessionIds",
+            "parameterName": "SelectedSessionIds"
           }
         ],
-        "noDataMessage": "No sessions were used from multiple IP addresses in the selected time range.",
+        "noDataMessage": "No users had sessions used from multiple IP addresses in the selected time range.",
         "showViewButton": false
       },
       "styleSettings": {
@@ -373,8 +385,8 @@
       "name": "grid-multi-ip-sessions-ip",
       "content": {
         "version": "KqlItem/1.0",
-        "title": "Sessions used from multiple IP addresses (select a session to see its sign-ins)",
-        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nSignIns\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    AllowlistedIPCount = dcountif(IPAddress, IsAllowlisted),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB'),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserPrincipalName, SessionId, IPCount, AllowlistedIPCount, IPAddresses, DeviceCount, EventCount, FirstSeen, LastSeen, Devices, Applications, SignInTypes, UserId\n| order by IPCount desc, LastSeen desc",
+        "title": "Users with sessions used from multiple IP addresses (select a user to see their sign-ins)",
+        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet MatchingSessions = SignIns\n| summarize\n    IPCount = dcount(IPAddress),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB')\n    by UserId, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserId, SessionId;\nMatchingSessions\n| join kind=inner SignIns on UserId, SessionId\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    SessionCount = dcount(SessionId),\n    IPCount = dcount(IPAddress),\n    AllowlistedIPCount = dcountif(IPAddress, IsAllowlisted),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    SessionIds = make_set(SessionId, 100),\n    IPAddresses = make_set(IPAddress, 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName\n| extend SelectedSessionIds = strcat_array(SessionIds, ',')\n| project UserPrincipalName, SessionCount, IPCount, AllowlistedIPCount, IPAddresses, DeviceCount, EventCount, FirstSeen, LastSeen, SessionIds, Devices, Applications, SignInTypes, UserId, SelectedSessionIds\n| order by IPCount desc, LastSeen desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -416,6 +428,18 @@
                 "linkTarget": "CellDetails",
                 "linkIsContextBlade": true
               }
+            },
+            {
+              "columnMatch": "SessionIds",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "SelectedSessionIds",
+              "formatter": 5
             }
           ],
           "rowLimit": 500,
@@ -436,11 +460,11 @@
         "exportedParameters": [
           {
             "parameterType": 1,
-            "fieldName": "SessionId",
-            "parameterName": "SelectedSessionId"
+            "fieldName": "SelectedSessionIds",
+            "parameterName": "SelectedSessionIds"
           }
         ],
-        "noDataMessage": "No sessions were used from multiple IP addresses in the selected time range.",
+        "noDataMessage": "No users had sessions used from multiple IP addresses in the selected time range.",
         "showViewButton": false
       },
       "styleSettings": {
@@ -464,8 +488,8 @@
       "name": "grid-multi-ip-sessions-country",
       "content": {
         "version": "KqlItem/1.0",
-        "title": "Sessions used from multiple IP addresses, by country (select a session to see its sign-ins)",
-        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet CountryNames = SignIns\n| where isnotempty(Country)\n| summarize by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country;\nSignIns\n| lookup kind=leftouter CountryNames on Country\n| extend CountryLabel = iff(isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB'),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(CountryLabel, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserPrincipalName, SessionId, CountryCount, Countries, IPCount, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, Devices, Applications, SignInTypes, UserId\n| order by CountryCount desc, IPCount desc, LastSeen desc",
+        "title": "Users with sessions used from multiple IP addresses, by country (select a user to see their sign-ins)",
+        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet MatchingSessions = SignIns\n| summarize\n    IPCount = dcount(IPAddress),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB')\n    by UserId, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserId, SessionId;\nlet CountryNames = SignIns\n| where isnotempty(Country)\n| summarize by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country;\nMatchingSessions\n| join kind=inner SignIns on UserId, SessionId\n| lookup kind=leftouter CountryNames on Country\n| extend CountryLabel = iff(isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    SessionCount = dcount(SessionId),\n    IPCount = dcount(IPAddress),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    SessionIds = make_set(SessionId, 100),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(CountryLabel, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName\n| extend SelectedSessionIds = strcat_array(SessionIds, ',')\n| project UserPrincipalName, CountryCount, Countries, IPCount, SessionCount, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, SessionIds, Devices, Applications, SignInTypes, UserId, SelectedSessionIds\n| order by CountryCount desc, IPCount desc, LastSeen desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -507,6 +531,18 @@
                 "linkTarget": "CellDetails",
                 "linkIsContextBlade": true
               }
+            },
+            {
+              "columnMatch": "SessionIds",
+              "formatter": 1,
+              "formatOptions": {
+                "linkTarget": "CellDetails",
+                "linkIsContextBlade": true
+              }
+            },
+            {
+              "columnMatch": "SelectedSessionIds",
+              "formatter": 5
             }
           ],
           "rowLimit": 500,
@@ -527,11 +563,11 @@
         "exportedParameters": [
           {
             "parameterType": 1,
-            "fieldName": "SessionId",
-            "parameterName": "SelectedSessionId"
+            "fieldName": "SelectedSessionIds",
+            "parameterName": "SelectedSessionIds"
           }
         ],
-        "noDataMessage": "No sessions were used from multiple IP addresses in the selected time range.",
+        "noDataMessage": "No users had sessions used from multiple IP addresses in the selected time range.",
         "showViewButton": false
       },
       "styleSettings": {
@@ -555,8 +591,8 @@
       "name": "grid-session-signins",
       "content": {
         "version": "KqlItem/1.0",
-        "title": "Sign-ins in the selected session",
-        "query": "union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where SessionId == '{SelectedSessionId}'\n| where '{NonGBOnly}' == 'No' or (isnotempty(tostring(Location.countryOrRegion)) and tostring(Location.countryOrRegion) != 'GB')\n| project TimeGenerated, SignInType, UserPrincipalName, IPAddress, Allowlisted = ${ip_allowlist_condition}, City = tostring(Location.city), Country = tostring(Location.countryOrRegion), CountryName = tostring(geo_info_from_ip_address(IPAddress).country), AppDisplayName, ResourceDisplayName, DeviceId = tostring(Device.deviceId), Browser = tostring(Device.browser), OS = tostring(Device.operatingSystem), UserAgent, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated asc",
+        "title": "Sign-ins in the selected user's multi-IP sessions",
+        "query": "union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where SessionId in (split('{SelectedSessionIds}', ','))\n| where '{NonGBOnly}' == 'No' or (isnotempty(tostring(Location.countryOrRegion)) and tostring(Location.countryOrRegion) != 'GB')\n| project TimeGenerated, SessionId, SignInType, UserPrincipalName, IPAddress, Allowlisted = ${ip_allowlist_condition}, City = tostring(Location.city), Country = tostring(Location.countryOrRegion), CountryName = tostring(geo_info_from_ip_address(IPAddress).country), AppDisplayName, ResourceDisplayName, DeviceId = tostring(Device.deviceId), Browser = tostring(Device.browser), OS = tostring(Device.operatingSystem), UserAgent, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated asc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -569,7 +605,7 @@
           "rowLimit": 1000,
           "filter": true
         },
-        "noDataMessage": "No sign-ins found for the selected session.",
+        "noDataMessage": "No sign-ins found for the selected user.",
         "showViewButton": false
       },
       "styleSettings": {
@@ -582,7 +618,7 @@
       },
       "conditionalVisibilities": [
         {
-          "parameterName": "SelectedSessionId",
+          "parameterName": "SelectedSessionIds",
           "comparison": "isNotEqualTo",
           "value": ""
         }
