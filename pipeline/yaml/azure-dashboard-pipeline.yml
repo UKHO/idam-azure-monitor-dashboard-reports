@@ -67,8 +67,7 @@ extends:
             storage_account_name: ${{ variables.TFStateStorageAccountName }}
             container_name: ${{ variables.TFStateContainerName }}
             key: ${{ format(variables.TFStateBlobNameShard, 'dev') }}
-          RunMode: 'PlanVerifyApply'
-          VerificationMode: 'VerifyOnDestroy'
+          RunMode: 'ApplyOnly'
           JobsVariableMappings:
             - group: "${{ variables.ServiceName }}-shared"
           EnvironmentVariableMappings:
