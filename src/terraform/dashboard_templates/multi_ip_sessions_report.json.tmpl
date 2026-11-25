@@ -41,10 +41,10 @@
             }
           },
           {
-            "id": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
+            "id": "a3d9f6c2-8e14-4b7a-9f05-6c2e1d8b4a97",
             "version": "KqlParameterItem/1.0",
-            "name": "MinIPs",
-            "label": "Minimum Distinct IPs",
+            "name": "SignInTypeFilter",
+            "label": "Sign-in Type",
             "type": 2,
             "isRequired": true,
             "multiSelect": false,
@@ -53,26 +53,9 @@
               "additionalResourceOptions": [],
               "showDefault": false
             },
-            "jsonData": "[\r\n{\"value\":\"2\",\"label\":\"2 or more\",\"selected\":true},\r\n{\"value\":\"3\",\"label\":\"3 or more\"},\r\n{\"value\":\"5\",\"label\":\"5 or more\"},\r\n{\"value\":\"10\",\"label\":\"10 or more\"}\r\n]",
-            "key": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
-            "value": "2"
-          },
-          {
-            "id": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
-            "version": "KqlParameterItem/1.0",
-            "name": "CountryFilter",
-            "label": "Sessions Shown",
-            "type": 2,
-            "isRequired": true,
-            "multiSelect": false,
-            "isHiddenWhenLocked": false,
-            "typeSettings": {
-              "additionalResourceOptions": [],
-              "showDefault": false
-            },
-            "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All sessions\",\"selected\":true},\r\n{\"value\":\"Multi\",\"label\":\"Only sessions seen in more than one country\"}\r\n]",
-            "key": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
-            "value": "All"
+            "jsonData": "[\r\n{\"value\":\"Both\",\"label\":\"Interactive and non-interactive\",\"selected\":true},\r\n{\"value\":\"Interactive\",\"label\":\"Interactive only\"},\r\n{\"value\":\"NonInteractive\",\"label\":\"Non-interactive only\"}\r\n]",
+            "key": "a3d9f6c2-8e14-4b7a-9f05-6c2e1d8b4a97",
+            "value": "Both"
           },
           {
             "id": "4d7a2b18-c6e3-4f95-a0b1-3e8f6c2d9a74",
@@ -138,6 +121,52 @@
             "value": [
               "value::all"
             ]
+          },
+          {
+            "id": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
+            "version": "KqlParameterItem/1.0",
+            "name": "MinIPs",
+            "label": "Minimum Distinct IPs",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"2\",\"label\":\"2 or more\",\"selected\":true},\r\n{\"value\":\"3\",\"label\":\"3 or more\"},\r\n{\"value\":\"5\",\"label\":\"5 or more\"},\r\n{\"value\":\"10\",\"label\":\"10 or more\"}\r\n]",
+            "key": "2f8b6d03-a9c1-47e5-b3d7-5e1c0a9f8b52",
+            "value": "2"
+          },
+          {
+            "id": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
+            "version": "KqlParameterItem/1.0",
+            "name": "CountryFilter",
+            "label": "Sessions Shown",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": false,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All sessions\",\"selected\":true},\r\n{\"value\":\"Multi\",\"label\":\"Only sessions seen in more than one country\"}\r\n]",
+            "key": "9c3e1f74-6b0a-4d2c-85e9-7a4b3d1c0e63",
+            "value": "All"
+          },
+          {
+            "id": "f0b7c3e9-2a6d-4c18-b5e4-8d1a9f2c7e60",
+            "version": "KqlParameterItem/1.0",
+            "name": "ShowAllowlist",
+            "label": "Show Allowlist",
+            "type": 10,
+            "isRequired": true,
+            "isHiddenWhenLocked": false,
+            "jsonData": "[\r\n{\"value\":\"Yes\",\"label\":\"Yes\"},\r\n{\"value\":\"No\",\"label\":\"No\",\"selected\":true}\r\n]",
+            "key": "f0b7c3e9-2a6d-4c18-b5e4-8d1a9f2c7e60",
+            "value": "No"
           }
         ],
         "style": "pills"
@@ -152,12 +181,35 @@
       }
     },
     {
+      "type": 1,
+      "name": "info-ip-allowlist",
+      "content": {
+        "json": ${ip_allowlist_markdown},
+        "style": "info"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 2,
+        "w": 24,
+        "h": 4
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "ShowAllowlist",
+          "comparison": "isEqualTo",
+          "value": "Yes"
+        }
+      ]
+    },
+    {
       "type": 3,
       "name": "pie-countries",
       "content": {
         "version": "KqlItem/1.0",
         "title": "Successful sign-ins by country",
-        "query": "union isfuzzy=true\n    (SigninLogs\n     | extend Location = todynamic(tostring(LocationDetails))),\n    (AADNonInteractiveUserSignInLogs\n     | extend Location = todynamic(tostring(LocationDetails)))\n| where ResultType == '0'\n| where isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion)\n| where '{NonGBOnly}' == 'No' or (isnotempty(Country) and Country != 'GB')\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| where '{HideAllowlisted}' == 'No' or not(${ip_allowlist_condition})\n| summarize SignIns = count() by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize SignIns = sum(SignIns), CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country\n| extend Country = case(isempty(Country), 'Unknown', isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| project Country, SignIns\n| order by SignIns desc",
+        "query": "union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend Location = todynamic(tostring(LocationDetails))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend Location = todynamic(tostring(LocationDetails)))\n| where ResultType == '0'\n| where isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion)\n| where '{NonGBOnly}' == 'No' or (isnotempty(Country) and Country != 'GB')\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| where '{HideAllowlisted}' == 'No' or not(${ip_allowlist_condition})\n| summarize SignIns = count() by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize SignIns = sum(SignIns), CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country\n| extend Country = case(isempty(Country), 'Unknown', isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| project Country, SignIns\n| order by SignIns desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -173,7 +225,7 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 2,
+        "y": 6,
         "w": 12,
         "h": 9
       }
@@ -184,7 +236,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Successful sign-ins by IP address (top 20)",
-        "query": "union isfuzzy=true\n    (SigninLogs\n     | extend Location = todynamic(tostring(LocationDetails))),\n    (AADNonInteractiveUserSignInLogs\n     | extend Location = todynamic(tostring(LocationDetails)))\n| where ResultType == '0'\n| where isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion)\n| where '{NonGBOnly}' == 'No' or (isnotempty(Country) and Country != 'GB')\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| where '{HideAllowlisted}' == 'No' or not(${ip_allowlist_condition})\n| summarize SignIns = count(), Country = take_anyif(Country, isnotempty(Country)) by IPAddress\n| top 20 by SignIns desc\n| extend IPAddress = iff(isempty(Country), IPAddress, strcat(IPAddress, ' (', Country, ')'))\n| project IPAddress, SignIns\n| order by SignIns desc",
+        "query": "union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend Location = todynamic(tostring(LocationDetails))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend Location = todynamic(tostring(LocationDetails)))\n| where ResultType == '0'\n| where isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion)\n| where '{NonGBOnly}' == 'No' or (isnotempty(Country) and Country != 'GB')\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| where '{HideAllowlisted}' == 'No' or not(${ip_allowlist_condition})\n| summarize SignIns = count(), Country = take_anyif(Country, isnotempty(Country)) by IPAddress\n| top 20 by SignIns desc\n| extend IPAddress = iff(isempty(Country), IPAddress, strcat(IPAddress, ' (', Country, ')'))\n| project IPAddress, SignIns\n| order by SignIns desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -200,7 +252,7 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 12,
-        "y": 2,
+        "y": 6,
         "w": 12,
         "h": 9
       }
@@ -211,7 +263,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Sessions used from multiple IP addresses (select a session to see its sign-ins)",
-        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet CountryNames = SignIns\n| where isnotempty(Country)\n| summarize by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country;\nSignIns\n| lookup kind=leftouter CountryNames on Country\n| extend CountryLabel = iff(isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    AllowlistedIPCount = dcountif(IPAddress, IsAllowlisted),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB'),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(CountryLabel, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserPrincipalName, SessionId, IPCount, AllowlistedIPCount, CountryCount, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, Countries, Devices, Applications, SignInTypes, UserId\n| order by IPCount desc, LastSeen desc",
+        "query": "let SignIns = union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where isnotempty(UserId) and isnotempty(SessionId) and isnotempty(IPAddress)\n| extend Country = tostring(Location.countryOrRegion),\n         DeviceId = tostring(Device.deviceId)\n| extend EmailDomain = tolower(iff(UserPrincipalName has '#EXT#', extract(@'_([^_]+)#EXT#', 1, UserPrincipalName), tostring(split(UserPrincipalName, '@')[1])))\n| where '*' in ({EmailDomains}) or EmailDomain in ({EmailDomains})\n| extend IsAllowlisted = ${ip_allowlist_condition};\nlet CountryNames = SignIns\n| where isnotempty(Country)\n| summarize by Country, IPAddress\n| extend CountryName = tostring(geo_info_from_ip_address(IPAddress).country)\n| summarize CountryName = take_anyif(CountryName, isnotempty(CountryName)) by Country;\nSignIns\n| lookup kind=leftouter CountryNames on Country\n| extend CountryLabel = iff(isempty(CountryName), Country, strcat(CountryName, ' (', Country, ')'))\n| summarize\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    EventCount = count(),\n    IPCount = dcount(IPAddress),\n    AllowlistedIPCount = dcountif(IPAddress, IsAllowlisted),\n    NonAllowlistedIPCount = dcountif(IPAddress, not(IsAllowlisted)),\n    CountryCount = dcountif(Country, isnotempty(Country)),\n    NonGBCountryCount = dcountif(Country, isnotempty(Country) and Country != 'GB'),\n    DeviceCount = dcountif(DeviceId, isnotempty(DeviceId)),\n    IPAddresses = make_set(IPAddress, 20),\n    Countries = make_set_if(CountryLabel, isnotempty(Country), 20),\n    Devices = make_set_if(DeviceId, isnotempty(DeviceId), 20),\n    Applications = make_set(AppDisplayName, 20),\n    SignInTypes = make_set(SignInType, 5)\n    by UserId, UserPrincipalName, SessionId\n| where IPCount >= {MinIPs}\n| where '{CountryFilter}' == 'All' or CountryCount > 1\n| where '{NonGBOnly}' == 'No' or NonGBCountryCount > 0\n| where '{HideAllowlisted}' == 'No' or NonAllowlistedIPCount > 0\n| project UserPrincipalName, SessionId, IPCount, AllowlistedIPCount, CountryCount, DeviceCount, EventCount, FirstSeen, LastSeen, IPAddresses, Countries, Devices, Applications, SignInTypes, UserId\n| order by IPCount desc, LastSeen desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -280,7 +332,7 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 11,
+        "y": 15,
         "w": 24,
         "h": 11
       }
@@ -291,7 +343,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Sign-ins in the selected session",
-        "query": "union isfuzzy=true\n    (SigninLogs\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where SessionId == '{SelectedSessionId}'\n| project TimeGenerated, SignInType, UserPrincipalName, IPAddress, Allowlisted = ${ip_allowlist_condition}, City = tostring(Location.city), Country = tostring(Location.countryOrRegion), CountryName = tostring(geo_info_from_ip_address(IPAddress).country), AppDisplayName, ResourceDisplayName, DeviceId = tostring(Device.deviceId), Browser = tostring(Device.browser), OS = tostring(Device.operatingSystem), UserAgent, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated asc",
+        "query": "union isfuzzy=true\n    (SigninLogs\n     | where '{SignInTypeFilter}' in ('Both', 'Interactive')\n     | extend SignInType = 'Interactive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail))),\n    (AADNonInteractiveUserSignInLogs\n     | where '{SignInTypeFilter}' in ('Both', 'NonInteractive')\n     | extend SignInType = 'NonInteractive',\n              Location = todynamic(tostring(LocationDetails)),\n              Device = todynamic(tostring(DeviceDetail)))\n| where ResultType == '0'\n| where SessionId == '{SelectedSessionId}'\n| where '{NonGBOnly}' == 'No' or (isnotempty(tostring(Location.countryOrRegion)) and tostring(Location.countryOrRegion) != 'GB')\n| project TimeGenerated, SignInType, UserPrincipalName, IPAddress, Allowlisted = ${ip_allowlist_condition}, City = tostring(Location.city), Country = tostring(Location.countryOrRegion), CountryName = tostring(geo_info_from_ip_address(IPAddress).country), AppDisplayName, ResourceDisplayName, DeviceId = tostring(Device.deviceId), Browser = tostring(Device.browser), OS = tostring(Device.operatingSystem), UserAgent, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated asc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -311,7 +363,7 @@
         "showBorder": true,
         "borderStyle": "light thick",
         "x": 0,
-        "y": 22,
+        "y": 26,
         "w": 24,
         "h": 11
       },
