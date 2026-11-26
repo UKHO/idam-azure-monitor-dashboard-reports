@@ -25,7 +25,7 @@ locals {
   }
 
   # IP addresses considered trusted in the Multi-IP Sessions report.
-  # Not visible or editable in the workbook; change via PR only.
+  # Listed (without the friendly names) in the workbook's "Show Allowlist" box; change via PR only.
   # Each entry can be:
   #   - a single IP                 "51.141.5.62"
   #   - a CIDR range                "62.172.108.0/27"
@@ -73,6 +73,20 @@ locals {
     join(" or ", local.multi_ip_sessions_ip_allowlist_conditions)
   )
 
+  # Markdown shown in the workbook's "Show Allowlist" panel, JSON-encoded so it can be
+  # dropped straight into the template as a JSON string value.
+  multi_ip_sessions_ip_allowlist_markdown = jsonencode(join("\n", concat(
+    [
+      "### Allowlisted IP addresses",
+      "",
+      "Sign-ins from these IP addresses are treated as trusted by the **Hide Allowlisted IPs** parameter and the **AllowlistedIPCount** / **Allowlisted** columns. The list is managed in Terraform; to change it, raise a pull request.",
+      ""
+    ],
+    length(local.multi_ip_sessions_ip_allowlist) == 0
+    ? ["_The allowlist is empty._"]
+    : [for entry in local.multi_ip_sessions_ip_allowlist : "- `${trimspace(entry)}`"]
+  )))
+
   workbooks = {
     (local.questionable_pim_report_workbook_id[local.environment]) = {
       display_name       = "Questionable PIM Assignments Report"
@@ -101,6 +115,7 @@ locals {
       variables = {
         law_resource_id        = var.law_resource_id
         ip_allowlist_condition = local.multi_ip_sessions_ip_allowlist_condition
+        ip_allowlist_markdown  = local.multi_ip_sessions_ip_allowlist_markdown
       }
     },
     (local.browser_mfa_gaps_report_workbook_id[local.environment]) = {

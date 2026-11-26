@@ -14,27 +14,51 @@ Deployed via Terraform from [`src/terraform/dashboard_templates/multi_ip_session
 
 ## What can you search for?
 
-The dashboard has **Time Range**, **Minimum Distinct IPs**, **Sessions Shown**, **Non-GB Only**, **Hide Allowlisted IPs** and **Email Domains** parameters, driving four panels:
+The dashboard has a **View** switch, which decides whether the users table focuses on IP addresses, countries or both. It also has **Time Range**, **Sign-in Type**, **Non-GB Only**, **Hide Allowlisted IPs**, **Email Domains**, **Minimum Distinct IPs**, **Sessions Shown** and **Show Allowlist** parameters. Every parameter is shown, and applies, in every view.
 
+### Views
+
+The view only changes the **Users with sessions used from multiple IP addresses** table. Both pie charts and the sign-ins table are always shown.
+
+| | **Both** (default) | **IP Addresses** | **Countries** |
+| --- | --- | --- | --- |
+| Leading columns | `SessionCount`, `IPCount`, `AllowlistedIPCount`, `CountryCount`, `Countries` | `SessionCount`, `IPCount`, `AllowlistedIPCount`, `IPAddresses` | `CountryCount`, `Countries`, `IPCount`, `SessionCount` |
+| Country columns | Yes | No | Yes |
+| Sorted by | Most countries, then most IP addresses, then most recent | Most IP addresses, then most recent | Most countries, then most IP addresses, then most recent |
+
+- **IP Addresses** is the direct test for session hijacking: the session was used from more than one network, whatever the country. It catches attackers using an IP address in the same country, but it is noisy, because mobile networks, VPNs and IPv4/IPv6 switching all change IP addresses.
+- **Countries** ranks sessions by how many countries they were used from, which cuts out most of the harmless cases.
+- **Both** shows everything, as the report did before views were added.
+
+### Panels
+
+- **Allowlisted IP addresses** — an information box listing every allowlisted IP address, CIDR range and wildcard pattern. Only shown when **Show Allowlist** is set to **Yes**.
 - **Successful sign-ins by country** — pie chart of every successful sign-in in the time range, by country. Countries are shown by name with their code, for example `Germany (DE)`.
 - **Successful sign-ins by IP address (top 20)** — pie chart, next to the country chart, of the 20 IP addresses with the most successful sign-ins, each labelled with its country code.
-- **Sessions used from multiple IP addresses** — one row per user and session, showing the number of distinct IP addresses, countries and devices, the number of events, first and last seen times, and the IP addresses, countries (by name and code), devices, applications and sign-in types involved. Sorted by most IP addresses, then most recent. Select an IP address, device or application cell to open its full list. Selecting a row selects that session.
-- **Sign-ins in the selected session** — shown once a session is selected. Lists every successful sign-in in the session in time order, with sign-in type, user, IP address, city, country code and country name, application, resource, device ID, browser, operating system, user agent, authentication requirement, conditional access status and correlation ID. Use it to see where and when the IP address changed.
+- **Users with sessions used from multiple IP addresses** — one row per user. Each user's sessions are first checked one by one against **Minimum Distinct IPs**, **Sessions Shown**, **Non-GB Only** and **Hide Allowlisted IPs**. Only the sessions that pass are then merged into that user's row. The row shows the number of matching sessions (`SessionCount`) and their IDs (`SessionIds`), along with counts, first and last seen times, IP addresses, devices, applications and sign-in types across those sessions. The columns and sort order depend on the **View** (see above). Select an IP address, session ID, device or application cell to open its full list. Selecting a row selects that user.
+- **Sign-ins in the selected user's multi-IP sessions** — shown once a user is selected. Lists every successful sign-in in that user's matching sessions in time order, with session ID, sign-in type, user, IP address, city, country code and country name, application, resource, device ID, browser, operating system, user agent, authentication requirement, conditional access status and correlation ID. The last column, `Raw`, holds the full original sign-in record with every field Entra ID logged (empty fields are left out). Select a `Raw` cell to open the record in a side panel. Use it to see where and when the IP address changed.
 
 The pie charts cover all successful sign-ins, not only multi-IP sessions, so **Minimum Distinct IPs** and **Sessions Shown** do not affect them.
 
+Merging works on whole sessions. A user who signs in from home in one session and from the office in another is **not** listed, because neither session was used from more than one IP address on its own. A session that moves between IP addresses mid-session is the hijack signal this report looks for, and it is kept. On a merged row, `IPCount` and `CountryCount` count across all of that user's matching sessions.
+
+### Parameters
+
 The parameters work like this:
 
-- **Time Range** offers 1, 3, 7 and 14 days, or a custom range. The default is 7 days.
-- **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more.
-- **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases.
-- **Non-GB Only** defaults to **No**. When set to **Yes**, the pie charts only count sign-ins from outside GB (sign-ins with no country are excluded), and the sessions table only lists sessions with at least one sign-in from outside GB. The sign-ins table still shows every sign-in in the selected session, including GB ones, so you can see the full picture.
-- **Hide Allowlisted IPs** defaults to **No**. When set to **Yes**, sign-ins from allowlisted IP addresses are left out of the pie charts, and sessions where *every* IP address is allowlisted are hidden from the sessions table. A session that mixes an allowlisted IP address with any other IP address is still shown, because a trusted IP address followed by an unknown one is exactly the session-hijack pattern this report looks for. The sessions table always shows an **AllowlistedIPCount** column, and the sign-ins table always shows an **Allowlisted** column, whatever this parameter is set to.
+- **View** chooses **Both** (the default), **IP Addresses** or **Countries**. See [Views](#views).
+- **Time Range** offers 1, 3, 7, 14, 30 and 60 days, or a custom range. The default is 7 days.
+- **Sign-in Type** limits every panel to interactive sign-ins (`SigninLogs`), non-interactive sign-ins (`AADNonInteractiveUserSignInLogs`) or both (the default).
+- **Non-GB Only** defaults to **No**. When set to **Yes**, the pie charts only count sign-ins from outside GB (sign-ins with no country are excluded), the users table only includes sessions with at least one sign-in from outside GB, and the sign-ins table only shows sign-ins from outside GB.
+- **Hide Allowlisted IPs** defaults to **No**. When set to **Yes**, sign-ins from allowlisted IP addresses are left out of the pie charts, and sessions where *every* IP address is allowlisted are left out of the users table. A session that mixes an allowlisted IP address with any other IP address is still included, because a trusted IP address followed by an unknown one is exactly the session-hijack pattern this report looks for. The users table shows an **AllowlistedIPCount** column in the **Both** and **IP Addresses** views, and the sign-ins table always shows an **Allowlisted** column, whatever this parameter is set to.
 - **Email Domains** lists every email domain that signed in during the time range, with the number of users for each. It defaults to **All**. Select one or more domains to limit the pie charts and the sessions table to those users, for example to separate company staff from customers. For guest accounts (user principal names containing `#EXT#`, such as `jane_contoso.com#EXT#@tenant.onmicrosoft.com`), the domain is taken from the guest's own email address (`contoso.com`), not the tenant domain.
+- **Minimum Distinct IPs** sets how many distinct IP addresses a session needs before it is listed: 2 (the default), 3, 5 or 10 or more.
+- **Sessions Shown** switches between all sessions (the default) and only sessions seen in more than one country, which removes most of the benign cases. It applies in the **IP Addresses** view too, even though that view's table has no country columns.
+- **Show Allowlist** defaults to **No**. When set to **Yes**, it shows the list of allowlisted IP addresses.
 
 ## IP allowlist
 
-The allowlist is held in Terraform, in the `multi_ip_sessions_ip_allowlist` local in [`src/terraform/dashboard.tf`](../src/terraform/dashboard.tf). It is built into the workbook at deploy time, so report users cannot see or change it in the portal. To change it, raise a pull request.
+The allowlist is held in Terraform, in the `multi_ip_sessions_ip_allowlist` local in [`src/terraform/dashboard.tf`](../src/terraform/dashboard.tf). It is built into the workbook at deploy time. Report users can see it by setting **Show Allowlist** to **Yes**, but cannot change it in the portal. Friendly names (the trailing comments) are not shown. To change the allowlist, raise a pull request.
 
 Each entry is a single IP address, a CIDR range or a pattern using `*` as a wildcard. Add the friendly name as a trailing comment:
 
@@ -59,7 +83,7 @@ Terraform checks every entry at plan time and fails the plan if any entry is not
 
 - `SigninLogs` (interactive) and `AADNonInteractiveUserSignInLogs` (non-interactive), combined with `union isfuzzy=true` so the report still works if one table is missing.
 - Successful sign-ins only (`ResultType == "0"`) where `UserId`, `SessionId` and `IPAddress` are all populated.
-- Sessions are grouped by `UserId`, `UserPrincipalName` and `SessionId`.
+- Each session is first checked on its own, grouped by `UserId` and `SessionId`. The sessions that pass are then merged into one row per `UserId` and `UserPrincipalName`.
 - Country comes from `LocationDetails.countryOrRegion` and device from `DeviceDetail.deviceId`. Empty values are not counted.
 - Country names are looked up from the IP address with the KQL `geo_info_from_ip_address()` function. The country code from Entra ID is still used for counting and filtering.
 - The time range comes from the **Time Range** parameter.
@@ -73,14 +97,15 @@ Terraform checks every entry at plan time and fails the plan if any entry is not
 
 ## Known Limitations
 
-- ⚠️ Non-interactive sign-in logs are very large. Long time ranges can be slow and costly to query, so the parameter offers 1, 3, 7 and 14 days. A custom range is allowed, but use it with care.
-- ⚠️ The IP address, country, device and application lists show at most 20 values per session. The counts are still exact.
-- ⚠️ The sessions table shows at most 500 rows and the sign-ins table at most 1,000 rows.
+- ⚠️ Non-interactive sign-in logs are very large. Long time ranges can be slow and costly to query. The 30 and 60 day options, and long custom ranges, may time out or hit query limits; if so, narrow **Sign-in Type** or **Email Domains**, or use a shorter range. Check the workspace's retention too: data older than the retention period is not returned.
+- ⚠️ The IP address, country, device and application lists show at most 20 values per user, and the session ID list at most 100. The counts are still exact. If a user has more than 100 matching sessions, the sign-ins table only covers the first 100.
+- ⚠️ The users table shows at most 500 rows and the sign-ins table at most 1,000 rows.
 - ⚠️ Sessions without a `SessionId` are not covered.
 - ⚠️ Country names come from a separate IP geolocation database, so very occasionally the name may not match the Entra ID country code (for example, an IP near a border). If no name is found, only the code is shown. The code is always what Entra ID recorded.
 - ⚠️ The IP address pie chart shows the top 20 IP addresses only.
 - ⚠️ The **Email Domains** list is built by querying both sign-in tables over the selected time range, which adds to load time on long ranges.
 - ⚠️ Failed sign-ins are not included.
+- ⚠️ Each view has its own copy of the sessions query in the template, so a change to the sessions logic must be made in all three (`grid-multi-ip-sessions-both`, `-ip` and `-country`).
 - ⚠️ The report does not look at what the session did after sign-in. Use Microsoft 365 audit logs and Defender for Cloud Apps for that.
 - ⚠️ `SigninLogs` and the non-interactive logs contain IP addresses and locations. Confirm who should have read access before sharing the workbook, as the existing reader access package covers `AuditLogs` and `AzureActivity` only.
 
