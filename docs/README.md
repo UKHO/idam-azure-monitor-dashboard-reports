@@ -23,6 +23,19 @@ Each report is deployed the same way (see the root [`README.md`](../README.md#en
 
 Reports still marked **Prototype** in the table above are not yet wired into the Terraform/pipeline in this repository and are deployed manually via the Azure Portal — see their individual pages for details and known limitations.
 
+## Sprint Review Mode
+
+Every report has a **Sprint Review Mode** option (**Off** / **On**) in its parameter bar. It is **Off** by default. Turn it **On** before you share your screen or record, for example in a sprint review.
+
+When it is **On**:
+
+- User names and email addresses are replaced with a short pseudonym such as `User-3f9a1c2e`. The pseudonym is built from a hash of the user's UPN, so the same person gets the same pseudonym in every row and every report. You can still see that one user appears many times without seeing who they are.
+- Application, service principal, group, and role names are still shown. They don't identify a person.
+- Drill-downs that show raw log records are hidden. This includes the CorrelationId searches and the `Raw` column in Multi-IP Sessions. Raw records contain names and emails in nested fields that can't be masked reliably.
+
+> [!NOTE]
+> Sprint Review Mode only hides names in what's on screen. It doesn't control access. Anyone with the right access can switch it off, and free-text fields such as PIM justifications show whatever the user typed. Check the report on screen before you start recording.
+
 ## Rules
 
 - ⚠️ **Do not manually edit a Live workbook in the Azure Portal.** Changes must go through Terraform and the pipeline, or they will be overwritten on the next deploy.

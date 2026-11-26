@@ -47,6 +47,23 @@
             "queryType": 0,
             "resourceType": "microsoft.operationalinsights/workspaces",
             "key": "8f2a8633-8ffc-416f-ac7d-eba05630fbee"
+          },
+          {
+            "id": "5e0f3a9c-1b7d-4c62-9a8e-2d4f6b1c3e01",
+            "version": "KqlParameterItem/1.0",
+            "name": "SprintReviewMode",
+            "label": "Sprint Review Mode",
+            "type": 10,
+            "description": "When On, user names and email addresses are replaced with pseudonyms (User-xxxxxxxx) and raw-record drill-downs are hidden, so the report can be safely shown in recordings.",
+            "isRequired": true,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"Off\",\"label\":\"Off\",\"selected\":true},\r\n{\"value\":\"On\",\"label\":\"On\"}\r\n]",
+            "key": "5e0f3a9c-1b7d-4c62-9a8e-2d4f6b1c3e01",
+            "value": "Off"
           }
         ]
       },
@@ -107,7 +124,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "FIDO Details",
-        "query": "AuditLogs\n| where TimeGenerated >= datetime(2025-11-01)\nand Category == \"UserManagement\"\nand Result =~ \"success\"\nand OperationName == \"User {ViewType} security info\"\nand ResultReason has \"Fido2 Authentication Method\"\n| where \"{SelectedMonth}\" != \"None\"\nand format_datetime(startofmonth(TimeGenerated), 'yyyy-MM') == \"{SelectedMonth}\"\n| mv-apply IB = InitiatedBy on (\n    summarize\n        UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n        UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n        ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n)\n| extend ByUser = case(\n    isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n    isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n    isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n    isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n    \"Unknown\"\n)\n| extend OnIdentity = Identity\n| project TimeGenerated, ByUser, OnIdentity, CorrelationId",
+        "query": "let SprintReviewMode = '{SprintReviewMode}' == 'On';\nlet Pseudonym = (v:string) { iff(isempty(v), v, strcat('User-', substring(hash_sha256(tolower(v)), 0, 8))) };\nAuditLogs\n| where TimeGenerated >= datetime(2025-11-01)\nand Category == \"UserManagement\"\nand Result =~ \"success\"\nand OperationName == \"User {ViewType} security info\"\nand ResultReason has \"Fido2 Authentication Method\"\n| where \"{SelectedMonth}\" != \"None\"\nand format_datetime(startofmonth(TimeGenerated), 'yyyy-MM') == \"{SelectedMonth}\"\n| mv-apply IB = InitiatedBy on (\n    summarize\n        UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n        UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n        ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n)\n| extend ByUser = case(\n    isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n    isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n    isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n    isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n    \"Unknown\"\n)\n| extend ByUser = iff(SprintReviewMode and (isnotempty(UserPrincipalName) or isnotempty(UserDisplayName)), Pseudonym(coalesce(UserPrincipalName, UserDisplayName)), ByUser)\n| mv-apply TR = TargetResources on (\n    summarize TargetUpn = anyif(tostring(TR.userPrincipalName), TR.type =~ 'User')\n)\n| extend OnIdentity = iff(SprintReviewMode, Pseudonym(coalesce(TargetUpn, Identity)), Identity)\n| project TimeGenerated, ByUser, OnIdentity, CorrelationId",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -171,6 +188,11 @@
       },
       "conditionalVisibilities": [
         {
+          "parameterName": "SprintReviewMode",
+          "comparison": "isEqualTo",
+          "value": "Off"
+        },
+        {
           "parameterName": "SelectedCorrelationId",
           "comparison": "isNotEqualTo",
           "value": ""
@@ -210,6 +232,11 @@
         "y": 21
       },
       "conditionalVisibilities": [
+        {
+          "parameterName": "SprintReviewMode",
+          "comparison": "isEqualTo",
+          "value": "Off"
+        },
         {
           "parameterName": "SelectedCorrelationId",
           "comparison": "isNotEqualTo",

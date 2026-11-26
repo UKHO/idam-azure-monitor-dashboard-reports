@@ -106,6 +106,23 @@
             "jsonData": "[\r\n{\"value\":\"All\",\"label\":\"All\"},\r\n{\"value\":\"In\",\"label\":\"In Hours (07:00-19:00 Mon-Fri)\"},\r\n{\"value\":\"Out\",\"label\":\"Out of Hours\", \"selected\": true }\r\n]",
             "key": "a1000000-0000-0000-0000-000000000005",
             "value": "Out"
+          },
+          {
+            "id": "a1000000-0000-0000-0000-000000000006",
+            "version": "KqlParameterItem/1.0",
+            "name": "SprintReviewMode",
+            "label": "Sprint Review Mode",
+            "type": 10,
+            "description": "When On, user names and email addresses are replaced with pseudonyms (User-xxxxxxxx) and raw-record drill-downs are hidden, so the report can be safely shown in recordings.",
+            "isRequired": true,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"Off\",\"label\":\"Off\",\"selected\":true},\r\n{\"value\":\"On\",\"label\":\"On\"}\r\n]",
+            "key": "a1000000-0000-0000-0000-000000000006",
+            "value": "Off"
           }
         ],
         "style": "pills"
@@ -202,7 +219,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Details",
-        "query": "let BusinessStartHour = 7;\r\nlet BusinessEndHour = 19;\r\n\r\nlet RoleActivations = AuditLogs\r\n    | where Category == \"RoleManagement\"\r\n    | where Result =~ \"success\"\r\n    | where OperationName == \"Add member to role completed (PIM activation)\"\r\n    | mv-apply IB = InitiatedBy on (\r\n        summarize\r\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\r\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\r\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\r\n    )\r\n    | extend Actor = case(\r\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\r\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\r\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\r\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\r\n        \"Unknown\"\r\n    )\r\n    | mv-apply TR = TargetResources on (\r\n        summarize Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\")\r\n    )\r\n    | where Actor != \"Azure AD PIM\"\r\n    | where isnotempty(Role)\r\n    | where Role in ({Roles:value})\r\n    | extend Target = Role, Type = \"Role\";\r\n\r\nlet GroupActivations = AuditLogs\r\n    | where Category == \"GroupManagement\"\r\n    | where Result =~ \"success\"\r\n    | where OperationName == \"Add member to role completed (PIM activation)\"\r\n    | mv-apply IB = InitiatedBy on (\r\n        summarize\r\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\r\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\r\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\r\n    )\r\n    | extend Actor = case(\r\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\r\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\r\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\r\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\r\n        \"Unknown\"\r\n    )\r\n    | mv-apply TR = TargetResources on (\r\n        summarize \r\n            GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\" or TR.type =~ \"Other\")\r\n    )\r\n    | where Actor != \"Azure AD PIM\"\r\n    | where isnotempty(GroupName)\r\n    | where GroupName in ({Groups:value})\r\n    | extend Target = GroupName, Type = \"Group\";\r\n\r\nunion RoleActivations, GroupActivations\r\n| extend LocalTime = datetime_utc_to_local(TimeGenerated, 'Europe/London')\r\n| extend DOW = dayofweek(LocalTime) / 1d\r\n| extend HoursFlag = iff(hourofday(LocalTime) between (BusinessStartHour .. BusinessEndHour - 1) and DOW !in (0, 6), \"In\", \"Out\")\r\n| where '{BusinessHours}' == \"All\" or HoursFlag == '{BusinessHours}'\r\n| where '{SelectedTarget}' == 'All' or Target == '{SelectedTarget}'\r\n| order by TimeGenerated desc\r\n| project TimeGenerated, Actor, Target, Justification = ResultReason, CorrelationId",
+        "query": "let SprintReviewMode = '{SprintReviewMode}' == 'On';\r\nlet Pseudonym = (v:string) { iff(isempty(v), v, strcat('User-', substring(hash_sha256(tolower(v)), 0, 8))) };\r\nlet BusinessStartHour = 7;\r\nlet BusinessEndHour = 19;\r\n\r\nlet RoleActivations = AuditLogs\r\n    | where Category == \"RoleManagement\"\r\n    | where Result =~ \"success\"\r\n    | where OperationName == \"Add member to role completed (PIM activation)\"\r\n    | mv-apply IB = InitiatedBy on (\r\n        summarize\r\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\r\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\r\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\r\n    )\r\n    | extend Actor = case(\r\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\r\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\r\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\r\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\r\n        \"Unknown\"\r\n    )\r\n    | mv-apply TR = TargetResources on (\r\n        summarize Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\")\r\n    )\r\n    | where Actor != \"Azure AD PIM\"\r\n    | where isnotempty(Role)\r\n    | where Role in ({Roles:value})\r\n    | extend Target = Role, Type = \"Role\";\r\n\r\nlet GroupActivations = AuditLogs\r\n    | where Category == \"GroupManagement\"\r\n    | where Result =~ \"success\"\r\n    | where OperationName == \"Add member to role completed (PIM activation)\"\r\n    | mv-apply IB = InitiatedBy on (\r\n        summarize\r\n            UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\r\n            UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\r\n            ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\r\n    )\r\n    | extend Actor = case(\r\n        isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\r\n        isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\r\n        isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\r\n        isnotempty(ApplicationDisplayName), ApplicationDisplayName,\r\n        \"Unknown\"\r\n    )\r\n    | mv-apply TR = TargetResources on (\r\n        summarize \r\n            GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\" or TR.type =~ \"Other\")\r\n    )\r\n    | where Actor != \"Azure AD PIM\"\r\n    | where isnotempty(GroupName)\r\n    | where GroupName in ({Groups:value})\r\n    | extend Target = GroupName, Type = \"Group\";\r\n\r\nunion RoleActivations, GroupActivations\r\n| extend LocalTime = datetime_utc_to_local(TimeGenerated, 'Europe/London')\r\n| extend DOW = dayofweek(LocalTime) / 1d\r\n| extend HoursFlag = iff(hourofday(LocalTime) between (BusinessStartHour .. BusinessEndHour - 1) and DOW !in (0, 6), \"In\", \"Out\")\r\n| where '{BusinessHours}' == \"All\" or HoursFlag == '{BusinessHours}'\r\n| where '{SelectedTarget}' == 'All' or Target == '{SelectedTarget}'\r\n| order by TimeGenerated desc\r\n| extend Actor = iff(SprintReviewMode and (isnotempty(UserPrincipalName) or isnotempty(UserDisplayName)), Pseudonym(coalesce(UserPrincipalName, UserDisplayName)), Actor)\r\n| project TimeGenerated, Actor, Target, Justification = ResultReason, CorrelationId",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -254,6 +271,11 @@
         "y": 21
       },
       "conditionalVisibilities": [
+        {
+          "parameterName": "SprintReviewMode",
+          "comparison": "isEqualTo",
+          "value": "Off"
+        },
         {
           "parameterName": "CorrelationId",
           "comparison": "isNotEqualTo",
