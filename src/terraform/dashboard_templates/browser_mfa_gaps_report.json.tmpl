@@ -324,7 +324,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Authentication and conditional access detail",
-        "query": "SigninLogs\n| where CorrelationId == '{SelectedCorrelationId}'\n| extend UserPrincipalName = iff('{SprintReviewMode}' == 'On' and isnotempty(UserPrincipalName), strcat('User-', substring(hash_sha256(tolower(UserPrincipalName)), 0, 8)), UserPrincipalName)\n| project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, ResultDescription, AuthenticationRequirement, AuthenticationDetails, ConditionalAccessStatus, ConditionalAccessPolicies\n| order by TimeGenerated asc",
+        "query": "SigninLogs\n| where CorrelationId == '{SelectedCorrelationId}'\n| extend UserPrincipalName = iff('{SprintReviewMode}' == 'On' and isnotempty(UserPrincipalName), strcat('User-', substring(hash_sha256(tolower(UserPrincipalName)), 0, 8)), UserPrincipalName)\n| extend ResultDescription = iff('{SprintReviewMode}' == 'On', replace_regex(ResultDescription, @'[A-Za-z0-9._%+#-]+@[A-Za-z0-9-]+([.][A-Za-z0-9-]+)+', '[redacted]'), ResultDescription)\n| project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, ResultDescription, AuthenticationRequirement, AuthenticationDetails, ConditionalAccessStatus, ConditionalAccessPolicies\n| order by TimeGenerated asc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
