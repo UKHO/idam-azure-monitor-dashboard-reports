@@ -87,6 +87,23 @@
             "jsonData": "[\r\n{\"value\":\"NoMfa\",\"label\":\"Only where MFA was not used\",\"selected\":true},\r\n{\"value\":\"All\",\"label\":\"All sign-ins\"}\r\n]",
             "key": "7d2e9a14-8c3b-4f60-b1a5-3e9f6c0d4b21",
             "value": "NoMfa"
+          },
+          {
+            "id": "2a9f5c07-3e6b-4d18-a4c2-9b1e7d3f5a60",
+            "version": "KqlParameterItem/1.0",
+            "name": "SprintReviewMode",
+            "label": "Sprint Review Mode",
+            "type": 10,
+            "description": "When On, user names and email addresses are replaced with pseudonyms (User-xxxxxxxx) and raw-record drill-downs are hidden, so the report can be safely shown in recordings.",
+            "isRequired": true,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"Off\",\"label\":\"Off\",\"selected\":true},\r\n{\"value\":\"On\",\"label\":\"On\"}\r\n]",
+            "key": "2a9f5c07-3e6b-4d18-a4c2-9b1e7d3f5a60",
+            "value": "Off"
           }
         ],
         "style": "pills"
@@ -234,7 +251,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Sign-ins for the selected browser or version",
-        "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where '*' in ({ProtectedApps}) or AppDisplayName in ({ProtectedApps})\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserVersion = iff(isempty(Browser), 'Unknown', Browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| where BrowserFamily == '{SelectedBrowser}'\n| where '{SelectedVersion}' == '*' or BrowserVersion == '{SelectedVersion}'\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| where '{MfaScope}' == 'All' or MfaStatus == 'MFA not used'\n| project TimeGenerated, UserPrincipalName, UserType, AppDisplayName, ResourceDisplayName, IPAddress, City = tostring(LocationDetails.city), Country = tostring(LocationDetails.countryOrRegion), OS = tostring(DeviceDetail.operatingSystem), Browser = BrowserVersion, Compliant = tostring(DeviceDetail.isCompliant), TrustType = tostring(DeviceDetail.trustType), MfaStatus, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated desc",
+        "query": "SigninLogs\n| where ResultType == '0'\n| extend AppDisplayName = iff(isempty(AppDisplayName), 'Unknown', AppDisplayName)\n| where '*' in ({ProtectedApps}) or AppDisplayName in ({ProtectedApps})\n| extend Browser = tostring(DeviceDetail.browser)\n| extend BrowserVersion = iff(isempty(Browser), 'Unknown', Browser)\n| extend BrowserFamily = iff(isempty(Browser), 'Unknown', trim(' ', extract(@'^([^\\d]+)', 1, Browser)))\n| where BrowserFamily == '{SelectedBrowser}'\n| where '{SelectedVersion}' == '*' or BrowserVersion == '{SelectedVersion}'\n| extend AuthDetails = tostring(AuthenticationDetails)\n| extend MfaStatus = case(\n    AuthDetails has 'MFA completed', 'MFA completed',\n    AuthDetails has_any ('FIDO2 security key', 'Windows Hello for Business', 'Certificate-based authentication'), 'Strong credential',\n    AuthDetails has 'MFA requirement satisfied by claim in the token', 'MFA via token claim',\n    'MFA not used')\n| where '{MfaScope}' == 'All' or MfaStatus == 'MFA not used'\n| extend UserPrincipalName = iff('{SprintReviewMode}' == 'On' and isnotempty(UserPrincipalName), strcat('User-', substring(hash_sha256(tolower(UserPrincipalName)), 0, 8)), UserPrincipalName)\n| project TimeGenerated, UserPrincipalName, UserType, AppDisplayName, ResourceDisplayName, IPAddress, City = tostring(LocationDetails.city), Country = tostring(LocationDetails.countryOrRegion), OS = tostring(DeviceDetail.operatingSystem), Browser = BrowserVersion, Compliant = tostring(DeviceDetail.isCompliant), TrustType = tostring(DeviceDetail.trustType), MfaStatus, AuthenticationRequirement, ConditionalAccessStatus, CorrelationId\n| order by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -307,7 +324,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "Authentication and conditional access detail",
-        "query": "SigninLogs\n| where CorrelationId == '{SelectedCorrelationId}'\n| project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, ResultDescription, AuthenticationRequirement, AuthenticationDetails, ConditionalAccessStatus, ConditionalAccessPolicies\n| order by TimeGenerated asc",
+        "query": "SigninLogs\n| where CorrelationId == '{SelectedCorrelationId}'\n| extend UserPrincipalName = iff('{SprintReviewMode}' == 'On' and isnotempty(UserPrincipalName), strcat('User-', substring(hash_sha256(tolower(UserPrincipalName)), 0, 8)), UserPrincipalName)\n| project TimeGenerated, UserPrincipalName, AppDisplayName, ResourceDisplayName, ResultType, ResultDescription, AuthenticationRequirement, AuthenticationDetails, ConditionalAccessStatus, ConditionalAccessPolicies\n| order by TimeGenerated asc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",

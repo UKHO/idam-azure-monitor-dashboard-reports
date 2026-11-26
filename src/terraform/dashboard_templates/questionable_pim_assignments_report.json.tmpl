@@ -48,6 +48,23 @@
             "value": {
               "durationMs": 1209600000
             }
+          },
+          {
+            "id": "9d3b7e21-4c8a-4f15-b6e0-7a2c5d9f1e48",
+            "version": "KqlParameterItem/1.0",
+            "name": "SprintReviewMode",
+            "label": "Sprint Review Mode",
+            "type": 10,
+            "description": "When On, user names and email addresses are replaced with pseudonyms (User-xxxxxxxx) and raw-record drill-downs are hidden, so the report can be safely shown in recordings.",
+            "isRequired": true,
+            "isHiddenWhenLocked": false,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n{\"value\":\"Off\",\"label\":\"Off\",\"selected\":true},\r\n{\"value\":\"On\",\"label\":\"On\"}\r\n]",
+            "key": "9d3b7e21-4c8a-4f15-b6e0-7a2c5d9f1e48",
+            "value": "Off"
           }
         ],
         "title": ""
@@ -113,7 +130,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| project TimeGenerated, TargetEntityName, Role, ResultDescription, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role in PIM completed (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| extend TargetEntityName = iff('{SprintReviewMode}' == 'On' and isempty(GroupName) and (isnotempty(UserEmail) or isnotempty(UserName)), strcat('User-', substring(hash_sha256(tolower(coalesce(UserEmail, UserName))), 0, 8)), TargetEntityName)\n| extend Actor = iff('{SprintReviewMode}' == 'On' and (isnotempty(UserPrincipalName) or isnotempty(UserDisplayName)), strcat('User-', substring(hash_sha256(tolower(coalesce(UserPrincipalName, UserDisplayName))), 0, 8)), Actor)\n| project TimeGenerated, TargetEntityName, Role, ResultDescription, Actor, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -194,6 +211,11 @@
       },
       "conditionalVisibilities": [
         {
+          "parameterName": "SprintReviewMode",
+          "comparison": "isEqualTo",
+          "value": "Off"
+        },
+        {
           "parameterName": "PIMUsersMadePermanentCorrelationID",
           "comparison": "isNotEqualTo",
           "value": ""
@@ -252,7 +274,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| extend Type = iff(OperationName has \"permanent\", \"Permanent\", \"Timebound\")\n| project TimeGenerated, TargetEntityName, Role, Type, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName in (\n    \"Add eligible member to role in PIM completed (permanent)\",\n    \"Add eligible member to role in PIM completed (timebound)\")\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| extend Type = iff(OperationName has \"permanent\", \"Permanent\", \"Timebound\")\n| extend TargetEntityName = iff('{SprintReviewMode}' == 'On' and isempty(GroupName) and (isnotempty(UserEmail) or isnotempty(UserName)), strcat('User-', substring(hash_sha256(tolower(coalesce(UserEmail, UserName))), 0, 8)), TargetEntityName)\n| extend Actor = iff('{SprintReviewMode}' == 'On' and (isnotempty(UserPrincipalName) or isnotempty(UserDisplayName)), strcat('User-', substring(hash_sha256(tolower(coalesce(UserPrincipalName, UserDisplayName))), 0, 8)), Actor)\n| project TimeGenerated, TargetEntityName, Role, Type, Actor, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -332,6 +354,11 @@
       },
       "conditionalVisibilities": [
         {
+          "parameterName": "SprintReviewMode",
+          "comparison": "isEqualTo",
+          "value": "Off"
+        },
+        {
           "parameterName": "PIMAssignmentsInPIMCorrelationID",
           "comparison": "isNotEqualTo",
           "value": ""
@@ -407,7 +434,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| project TimeGenerated, TargetEntityName, Role, Actor, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where OperationName == \"Add member to role outside of PIM (permanent)\"\n| where Result =~ \"success\"\n| mv-apply TR = TargetResources on (\n    summarize\n        Role = anyif(tostring(TR.displayName), TR.type =~ \"Role\"),\n        UserName = anyif(tostring(TR.displayName), TR.type =~ \"User\"),\n        UserEmail = anyif(tostring(TR.userPrincipalName), TR.type =~ \"User\"),\n        GroupName = anyif(tostring(TR.displayName), TR.type =~ \"Group\"),\n        ServicePrincipalName = anyif(tostring(TR.displayName), TR.type =~ \"ServicePrincipal\")\n  )\n| extend TargetEntityName = case(\n    isnotempty(GroupName), GroupName,\n    isnotempty(UserEmail), strcat(UserEmail, \" (\", UserName, \")\"),\n    isnotempty(UserName), UserName,\n    isnotempty(ServicePrincipalName), ServicePrincipalName,\n    \"Unknown\"\n  )\n  | mv-apply IB = InitiatedBy on (\n      summarize\n          UserDisplayName = anyif(tostring(IB.user.displayName), isnotnull(IB.user)),\n          UserPrincipalName = anyif(tostring(IB.user.userPrincipalName), isnotnull(IB.user)),\n          ApplicationDisplayName = anyif(tostring(IB.app.displayName), isnotnull(IB.app))\n  )\n  | extend Actor = case(\n      isnotempty(UserDisplayName) and isnotempty(UserPrincipalName), strcat(UserPrincipalName, \" (\", tostring(UserDisplayName), \")\"),\n      isempty(UserDisplayName) and isnotempty(UserPrincipalName), UserPrincipalName,\n      isnotempty(UserDisplayName) and isempty(UserPrincipalName), UserDisplayName,\n      isnotempty(ApplicationDisplayName), ApplicationDisplayName,\n      \"Unknown\"\n  )\n| extend TargetEntityName = iff('{SprintReviewMode}' == 'On' and isempty(GroupName) and (isnotempty(UserEmail) or isnotempty(UserName)), strcat('User-', substring(hash_sha256(tolower(coalesce(UserEmail, UserName))), 0, 8)), TargetEntityName)\n| extend Actor = iff('{SprintReviewMode}' == 'On' and (isnotempty(UserPrincipalName) or isnotempty(UserDisplayName)), strcat('User-', substring(hash_sha256(tolower(coalesce(UserPrincipalName, UserDisplayName))), 0, 8)), Actor)\n| project TimeGenerated, TargetEntityName, Role, Actor, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -487,6 +514,11 @@
       },
       "conditionalVisibilities": [
         {
+          "parameterName": "SprintReviewMode",
+          "comparison": "isEqualTo",
+          "value": "Off"
+        },
+        {
           "parameterName": "PIMAssignmentsOutsidePIMCorrelationID",
           "comparison": "isNotEqualTo",
           "value": ""
@@ -557,7 +589,7 @@
       "content": {
         "version": "KqlItem/1.0",
         "title": "",
-        "query": "AzureActivity\n| where OperationNameValue =~ \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\n| where ActivityStatusValue =~ \"Success\"\n| extend authorizationJson = parse_json(Authorization)\n| extend\n    PrincipalType = tostring(authorizationJson.evidence.principalType),\n    Role = tostring(authorizationJson.evidence.role),\n    RoleAssignmentScope = tostring(authorizationJson.evidence.roleAssignmentScope)\n| where PrincipalType =~ \"User\"\n| project TimeGenerated, Caller, Role, RoleAssignmentScope, CorrelationId\n| sort by TimeGenerated desc",
+        "query": "AzureActivity\n| where OperationNameValue =~ \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"\n| where ActivityStatusValue =~ \"Success\"\n| extend authorizationJson = parse_json(Authorization)\n| extend\n    PrincipalType = tostring(authorizationJson.evidence.principalType),\n    Role = tostring(authorizationJson.evidence.role),\n    RoleAssignmentScope = tostring(authorizationJson.evidence.roleAssignmentScope)\n| where PrincipalType =~ \"User\"\n| extend Caller = iff('{SprintReviewMode}' == 'On' and Caller contains '@', strcat('User-', substring(hash_sha256(tolower(Caller)), 0, 8)), Caller)\n| project TimeGenerated, Caller, Role, RoleAssignmentScope, CorrelationId\n| sort by TimeGenerated desc",
         "size": 0,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
@@ -644,6 +676,11 @@
         "y": 60
       },
       "conditionalVisibilities": [
+        {
+          "parameterName": "SprintReviewMode",
+          "comparison": "isEqualTo",
+          "value": "Off"
+        },
         {
           "parameterName": "RBACAssignmentToUserCorrelationId",
           "comparison": "isNotEqualTo",
